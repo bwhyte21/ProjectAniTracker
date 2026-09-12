@@ -9,7 +9,7 @@
       (function () {
         try {
           var stored = localStorage.getItem("anitracker-theme");
-          var theme = stored;
+          var theme = stored === "light" || stored === "dark" ? stored : null;
           if (!theme) {
             theme =
               window.matchMedia &&

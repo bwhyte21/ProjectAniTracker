@@ -2,15 +2,6 @@ export type Theme = "dark" | "light";
 
 const STORAGE_KEY = "anitracker-theme";
 
-export function getStoredTheme(): Theme | null {
-  try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    return v === "light" || v === "dark" ? v : null;
-  } catch {
-    return null;
-  }
-}
-
 export function getActiveTheme(): Theme {
   const attr = document.documentElement.getAttribute("data-theme");
   return attr === "light" ? "light" : "dark";
