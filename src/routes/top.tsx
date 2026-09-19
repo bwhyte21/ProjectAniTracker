@@ -35,20 +35,20 @@ import {
 import { useTopAnime } from "@/lib/anilist/hooks";
 import type { AniListMedia } from "@/lib/anilist/types";
 
-const COUNT_OPTIONS = [10, 25, 50, 100] as const;
+const COUNT_OPTIONS = [10, 25, 50] as const;
 const PAGE_SIZE = 10;
+const FETCH_COUNT = 50;
 
 export const Route = createFileRoute("/top")({
   component: TopPage,
 });
 
 function TopPage() {
-  const [count, setCount] = useState<number>(25);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: PAGE_SIZE,
   });
-  const { data, error, isPending, isError } = useTopAnime(count);
+  const { data, error, isPending, isError } = useTopAnime(FETCH_COUNT);
 
   const columns = useMemo<ColumnDef<AniListMedia>[]>(
     () => [
@@ -95,8 +95,7 @@ function TopPage() {
   });
 
   function handleCountChange(value: string) {
-    setCount(Number(value));
-    setPagination((current) => ({ ...current, pageIndex: 0 }));
+    setPagination({ pageIndex: 0, pageSize: Number(value) });
   }
 
   return (
@@ -106,9 +105,9 @@ function TopPage() {
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Count</span>
           <Select
-            value={String(count)}
+            value={String(pagination.pageSize)}
             onValueChange={handleCountChange}
-            aria-label="Number of results"
+            aria-label="Rows per page"
           >
             <SelectTrigger className="w-24">
               <SelectValue />
@@ -185,9 +184,7 @@ function TopPage() {
                   <PaginationItem key={index}>
                     <PaginationLink
                       onClick={() => table.setPageIndex(index)}
-                      isActive={
-                        table.getState().pagination.pageIndex === index
-                      }
+                      isActive={table.getState().pagination.pageIndex === index}
                     >
                       {index + 1}
                     </PaginationLink>
@@ -198,7 +195,8 @@ function TopPage() {
                     onClick={() => table.nextPage()}
                     aria-disabled={!table.getCanNextPage()}
                     className={cn(
-                      !table.getCanNextPage() && "pointer-events-none opacity-50",
+                      !table.getCanNextPage() &&
+                        "pointer-events-none opacity-50",
                     )}
                   />
                 </PaginationItem>
