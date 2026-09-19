@@ -59,7 +59,7 @@ fn row_to_tracked_anime(row: &sqlx::sqlite::SqliteRow) -> TrackedAnime {
 
 async fn db_pool(app: &AppHandle) -> Result<SqlitePool, String> {
     let instances = app.state::<DbInstances>();
-    let instances = instances.0.read().await;
+    let instances = instances.inner().0.read().await;
     if let Some(DbPool::Sqlite(pool)) = instances.get(DB_URL) {
         Ok(pool.clone())
     } else {
