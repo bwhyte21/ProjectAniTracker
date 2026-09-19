@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AnimeGrid } from "@/components/anime/AnimeGrid";
 import { useTrendingAnime } from "@/lib/anilist/hooks";
 
 export const Route = createFileRoute("/trending")({
@@ -8,27 +9,23 @@ export const Route = createFileRoute("/trending")({
 function TrendingPage() {
   const { data, error, isPending, isError } = useTrendingAnime();
 
-  if (isPending) {
-    return <p className="p-8">Loading trending anime...</p>;
-  }
-
-  if (isError) {
-    return (
-      <p className="p-8">Failed to load trending anime: {error.message}</p>
-    );
-  }
-
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold">Trending</h1>
-      <ul className="mt-4 space-y-1">
-        {data.map((media) => (
-          <li key={media.id}>
-            {media.title.romaji} | {media.coverImage?.large ?? "no cover"} |{" "}
-            {media.episodes ?? "?"} episodes
-          </li>
-        ))}
-      </ul>
+    <div className="flex flex-col gap-6 p-8">
+      <h1 className="text-3xl font-bold">Trending Now</h1>
+      {isPending && (
+        <p className="text-sm text-muted-foreground">
+          Loading trending anime...
+        </p>
+      )}
+      {isError && (
+        <p className="text-sm text-muted-foreground">
+          Failed to load trending anime: {error.message}
+        </p>
+      )}
+      {data && data.length === 0 && (
+        <p className="text-sm text-muted-foreground">No anime found.</p>
+      )}
+      {data && data.length > 0 && <AnimeGrid media={data} />}
     </div>
   );
 }
