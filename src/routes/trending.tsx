@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimeGrid } from "@/components/anime/AnimeGrid";
+import { OfflineState } from "@/components/anime/OfflineState";
+import { RouteError } from "@/components/RouteError";
 import { useTrendingAnime } from "@/lib/anilist/hooks";
 
 export const Route = createFileRoute("/trending")({
   component: TrendingPage,
+  errorComponent: RouteError,
 });
 
 function TrendingPage() {
-  const { data, error, isPending, isError } = useTrendingAnime();
+  const { data, error, isPending, isError, refetch } = useTrendingAnime();
 
   return (
     <div className="flex flex-col gap-6 p-8">
@@ -17,11 +20,7 @@ function TrendingPage() {
           Loading trending anime...
         </p>
       )}
-      {isError && (
-        <p className="text-sm text-muted-foreground">
-          Failed to load trending anime: {error.message}
-        </p>
-      )}
+      {isError && <OfflineState error={error} onRetry={refetch} />}
       {data && data.length === 0 && (
         <p className="text-sm text-muted-foreground">No anime found.</p>
       )}

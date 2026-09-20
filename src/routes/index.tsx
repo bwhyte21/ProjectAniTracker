@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimeCarousel } from "@/components/anime/AnimeCarousel";
+import { RouteError } from "@/components/RouteError";
 import {
   useSeasonalPopularAnime,
   useTopAnime,
@@ -8,6 +9,7 @@ import {
 
 export const Route = createFileRoute("/")({
   component: HomePage,
+  errorComponent: RouteError,
 });
 
 function HomePage() {

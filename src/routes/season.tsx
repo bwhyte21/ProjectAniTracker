@@ -1,13 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimeGrid } from "@/components/anime/AnimeGrid";
+import { OfflineState } from "@/components/anime/OfflineState";
+import { RouteError } from "@/components/RouteError";
 import { useSeasonalPopularAnime } from "@/lib/anilist/hooks";
 
 export const Route = createFileRoute("/season")({
   component: SeasonPage,
+  errorComponent: RouteError,
 });
 
 function SeasonPage() {
-  const { data, error, isPending, isError } = useSeasonalPopularAnime();
+  const { data, error, isPending, isError, refetch } =
+    useSeasonalPopularAnime();
 
   return (
     <div className="flex flex-col gap-6 p-8">
@@ -17,11 +21,7 @@ function SeasonPage() {
           Loading seasonal anime...
         </p>
       )}
-      {isError && (
-        <p className="text-sm text-muted-foreground">
-          Failed to load seasonal anime: {error.message}
-        </p>
-      )}
+      {isError && <OfflineState error={error} onRetry={refetch} />}
       {data && data.length === 0 && (
         <p className="text-sm text-muted-foreground">No anime found.</p>
       )}

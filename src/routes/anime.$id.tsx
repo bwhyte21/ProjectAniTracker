@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { Minus, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { AnimeCard } from "@/components/anime/AnimeCard";
+import { CoverImage } from "@/components/anime/CoverImage";
+import { OfflineState } from "@/components/anime/OfflineState";
+import { RouteError } from "@/components/RouteError";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,6 +44,7 @@ import {
 
 export const Route = createFileRoute("/anime/$id")({
   component: AnimeDetailPage,
+  errorComponent: RouteError,
 });
 
 const FORMAT_LABELS: Record<MediaFormat, string> = {
@@ -114,12 +119,14 @@ function AnimeDetailPage() {
 }
 
 function AnimeDetail({ animeId }: { animeId: number }) {
-  const { data: detail, error, isPending, isError } = useAnimeById(animeId);
+  const { data: detail, error, isPending, isError, refetch } = useAnimeById(
+    animeId,
+  );
   const { data: library, isPending: libraryIsPending } = useLibrary();
   const tracked =
     library?.find((anime) => anime.anilist_id === animeId) ?? null;
 
-  if (isPending) {
+  if (isPending || (isError && libraryIsPending)) {
     return (
       <div className="p-8">
         <p className="text-sm text-muted-foreground">Loading anime...</p>
@@ -127,13 +134,10 @@ function AnimeDetail({ animeId }: { animeId: number }) {
     );
   }
   if (isError) {
-    return (
-      <div className="p-8">
-        <p className="text-sm text-muted-foreground">
-          Failed to load anime: {error.message}
-        </p>
-      </div>
-    );
+    if (tracked) {
+      return <TrackedAnimeDetail tracked={tracked} />;
+    }
+    return <OfflineState error={error} onRetry={refetch} />;
   }
   if (!detail) {
     return null;
@@ -154,15 +158,11 @@ function AnimeDetail({ animeId }: { animeId: number }) {
     <div className="flex flex-col gap-8 p-8">
       <div className="flex flex-col gap-6 md:flex-row">
         <div className="flex w-full shrink-0 flex-col gap-4 md:w-60">
-          {detail.coverImage?.large ? (
-            <img
-              src={detail.coverImage.large}
-              alt={`Cover image for ${title}`}
-              className="aspect-[2/3] w-full rounded-xl object-cover"
-            />
-          ) : (
-            <div className="aspect-[2/3] w-full rounded-xl bg-muted" />
-          )}
+          <CoverImage
+            src={detail.coverImage?.large}
+            alt={`Cover image for ${title}`}
+            className="aspect-[2/3] w-full rounded-xl object-cover"
+          />
           <TrackingControls
             detail={detail}
             tracked={tracked}
@@ -245,12 +245,62 @@ function AnimeDetail({ animeId }: { animeId: number }) {
   );
 }
 
+function TrackedAnimeDetail({ tracked }: { tracked: TrackedAnime }) {
+  const seasonText =
+    tracked.season || tracked.year
+      ? [
+          tracked.season ? humanizeEnum(tracked.season) : null,
+          tracked.year,
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : null;
+
+  return (
+    <div className="flex flex-col gap-8 p-8">
+      <p className="text-sm text-muted-foreground">
+        Offline - showing saved data.
+      </p>
+      <div className="flex flex-col gap-6 md:flex-row">
+        <div className="flex w-full shrink-0 flex-col gap-4 md:w-60">
+          <CoverImage
+            src={convertFileSrc(tracked.cover_image_path)}
+            alt={`Cover image for ${tracked.title}`}
+            className="aspect-[2/3] w-full rounded-xl object-cover"
+          />
+          <TrackingControls
+            detail={null}
+            tracked={tracked}
+            libraryPending={false}
+          />
+          <div className="flex flex-col gap-3">
+            <InfoRow
+              label="Type"
+              value={
+                tracked.format
+                  ? (FORMAT_LABELS[tracked.format as MediaFormat] ??
+                    tracked.format)
+                  : "-"
+              }
+            />
+            <InfoRow label="Episodes" value={tracked.episode_count ?? "TBA"} />
+            <InfoRow label="Season" value={seasonText ?? "-"} />
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h1 className="text-3xl font-bold">{tracked.title}</h1>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TrackingControls({
   detail,
   tracked,
   libraryPending,
 }: {
-  detail: AnimeDetailMedia;
+  detail: AnimeDetailMedia | null;
   tracked: TrackedAnime | null;
   libraryPending: boolean;
 }) {
@@ -265,10 +315,14 @@ function TrackingControls({
     updateEpisodesSeenMutation.error ??
     deleteAnimeMutation.error;
 
-  const cover = detail.coverImage?.large ?? "";
-  const title = detail.title.english ?? detail.title.romaji ?? "Unknown title";
+  const cover = detail?.coverImage?.large ?? "";
+  const title =
+    detail?.title.english ?? detail?.title.romaji ?? "Unknown title";
 
   function handleSave(status: WatchStatus) {
+    if (!detail) {
+      return;
+    }
     saveAnimeMutation.mutate({
       anilistId: detail.id,
       title,
@@ -285,18 +339,25 @@ function TrackingControls({
   return (
     <div className="flex flex-col gap-3">
       {tracked === null ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button disabled={!cover || libraryPending}>Add to Library</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {WATCH_STATUSES.map((status) => (
-              <DropdownMenuItem key={status} onClick={() => handleSave(status)}>
-                {WATCH_STATUS_LABELS[status]}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        detail ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button disabled={!cover || libraryPending}>
+                Add to Library
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {WATCH_STATUSES.map((status) => (
+                <DropdownMenuItem
+                  key={status}
+                  onClick={() => handleSave(status)}
+                >
+                  {WATCH_STATUS_LABELS[status]}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null
       ) : (
         <>
           <div className="flex flex-col gap-1.5">
