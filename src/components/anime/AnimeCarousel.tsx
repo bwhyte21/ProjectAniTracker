@@ -1,6 +1,9 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
+import { AnimeCard } from "@/components/anime/AnimeCard";
+import { AnimeCardSkeleton } from "@/components/anime/AnimeCardSkeleton";
+import { OfflineState } from "@/components/anime/OfflineState";
 import {
   Carousel,
   CarouselContent,
@@ -8,7 +11,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { AnimeCard } from "@/components/anime/AnimeCard";
 import type { AniListMedia } from "@/lib/anilist/types";
 
 interface AnimeCarouselProps {
@@ -32,12 +34,14 @@ export function AnimeCarousel({ title, viewMoreTo, query }: AnimeCarouselProps) 
           <ArrowRight className="size-4" />
         </Link>
       </div>
-      {isPending && <p className="text-sm text-muted-foreground">Loading...</p>}
-      {isError && (
-        <p className="text-sm text-muted-foreground">
-          Failed to load anime: {error.message}
-        </p>
+      {isPending && (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+          {Array.from({ length: 10 }, (_, index) => (
+            <AnimeCardSkeleton key={index} />
+          ))}
+        </div>
       )}
+      {isError && <OfflineState error={error} onRetry={query.refetch} />}
       {data && data.length === 0 && (
         <p className="text-sm text-muted-foreground">No anime found.</p>
       )}
@@ -47,7 +51,7 @@ export function AnimeCarousel({ title, viewMoreTo, query }: AnimeCarouselProps) 
             {data.map((media) => (
               <CarouselItem
                 key={media.id}
-                className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5"
+                className="basis-1/2 sm:basis-1/3 md:basis-1/4 xl:basis-1/5"
               >
                 <AnimeCard media={media} />
               </CarouselItem>

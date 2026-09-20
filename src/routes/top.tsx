@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-table";
 import { cn } from "cn";
 import { animeCardTitle } from "@/components/anime/AnimeCard";
+import { OfflineState } from "@/components/anime/OfflineState";
+import { RouteError } from "@/components/RouteError";
 import {
   Pagination,
   PaginationContent,
@@ -24,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -41,6 +44,7 @@ const FETCH_COUNT = 50;
 
 export const Route = createFileRoute("/top")({
   component: TopPage,
+  errorComponent: RouteError,
 });
 
 function TopPage() {
@@ -48,7 +52,7 @@ function TopPage() {
     pageIndex: 0,
     pageSize: PAGE_SIZE,
   });
-  const { data, error, isPending, isError } = useTopAnime(FETCH_COUNT);
+  const { data, error, isPending, isError, refetch } = useTopAnime(FETCH_COUNT);
 
   const columns = useMemo<ColumnDef<AniListMedia>[]>(
     () => [
@@ -64,7 +68,7 @@ function TopPage() {
           <Link
             to="/anime/$id"
             params={{ id: String(row.original.id) }}
-            className="hover:underline"
+            className="block max-w-[40ch] truncate hover:underline"
           >
             {animeCardTitle(row.original)}
           </Link>
@@ -123,13 +127,36 @@ function TopPage() {
         </div>
       </div>
       {isPending && (
-        <p className="text-sm text-muted-foreground">Loading top anime...</p>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-16">Rank</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead className="w-20">Score</TableHead>
+              <TableHead className="w-24">Episodes</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: PAGE_SIZE }, (_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Skeleton className="h-4 w-8" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-64 max-w-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-10" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-10" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
-      {isError && (
-        <p className="text-sm text-muted-foreground">
-          Failed to load top anime: {error.message}
-        </p>
-      )}
+      {isError && <OfflineState error={error} onRetry={refetch} />}
       {data && data.length === 0 && (
         <p className="text-sm text-muted-foreground">No anime found.</p>
       )}

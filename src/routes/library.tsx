@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { LibraryCard } from "@/components/library/LibraryCard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLibrary } from "@/lib/library/hooks";
@@ -59,7 +59,15 @@ function LibraryPage() {
         </p>
       )}
       {data && data.length === 0 && (
-        <p className="text-sm text-muted-foreground">No tracked anime.</p>
+        <p className="text-sm text-muted-foreground">
+          Nothing here yet.{" "}
+          <Link
+            to="/"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            Browse to add anime.
+          </Link>
+        </p>
       )}
       {data && data.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
