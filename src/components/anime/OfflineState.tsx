@@ -19,3 +19,24 @@ export function OfflineState({ error, onRetry }: OfflineStateProps) {
     </div>
   );
 }
+
+interface OfflineNoticeProps {
+  message?: string;
+  onRetry?: () => void;
+}
+
+export function OfflineNotice({ message, onRetry }: OfflineNoticeProps) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <WifiOff className="size-4 text-muted-foreground" />
+      <span className="font-medium">No connection</span>
+      {message && <span className="text-muted-foreground">{message}</span>}
+      {onRetry && (
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          <RotateCcw />
+          Retry
+        </Button>
+      )}
+    </div>
+  );
+}

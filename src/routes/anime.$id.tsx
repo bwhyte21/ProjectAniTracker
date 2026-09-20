@@ -4,7 +4,7 @@ import { Minus, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { AnimeCard } from "@/components/anime/AnimeCard";
 import { CoverImage } from "@/components/anime/CoverImage";
-import { OfflineState } from "@/components/anime/OfflineState";
+import { OfflineNotice, OfflineState } from "@/components/anime/OfflineState";
 import { RouteError } from "@/components/RouteError";
 import { Button } from "@/components/ui/button";
 import {
@@ -135,7 +135,7 @@ function AnimeDetail({ animeId }: { animeId: number }) {
   }
   if (isError) {
     if (tracked) {
-      return <TrackedAnimeDetail tracked={tracked} />;
+      return <TrackedAnimeDetail tracked={tracked} onRetry={refetch} />;
     }
     return <OfflineState error={error} onRetry={refetch} />;
   }
@@ -245,7 +245,13 @@ function AnimeDetail({ animeId }: { animeId: number }) {
   );
 }
 
-function TrackedAnimeDetail({ tracked }: { tracked: TrackedAnime }) {
+function TrackedAnimeDetail({
+  tracked,
+  onRetry,
+}: {
+  tracked: TrackedAnime;
+  onRetry: () => void;
+}) {
   const seasonText =
     tracked.season || tracked.year
       ? [
@@ -258,9 +264,7 @@ function TrackedAnimeDetail({ tracked }: { tracked: TrackedAnime }) {
 
   return (
     <div className="flex flex-col gap-8 p-8">
-      <p className="text-sm text-muted-foreground">
-        Offline - showing saved data.
-      </p>
+      <OfflineNotice message="Showing saved data." onRetry={onRetry} />
       <div className="flex flex-col gap-6 md:flex-row">
         <div className="flex w-full shrink-0 flex-col gap-4 md:w-60">
           <CoverImage

@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { OfflineNotice } from "@/components/anime/OfflineState";
 import { LibraryCard } from "@/components/library/LibraryCard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOnline } from "@/hooks/useOnline";
 import { useLibrary } from "@/lib/library/hooks";
 import { isWatchStatus, type WatchStatus } from "@/lib/library/types";
 
@@ -27,6 +29,7 @@ function LibraryPage() {
   const { status } = Route.useSearch();
   const navigate = Route.useNavigate();
   const { data, error, isPending, isError } = useLibrary(status);
+  const online = useOnline();
 
   function handleTabChange(value: string) {
     navigate({
@@ -50,6 +53,7 @@ function LibraryPage() {
           ))}
         </TabsList>
       </Tabs>
+      {!online && <OfflineNotice />}
       {isPending && (
         <p className="text-sm text-muted-foreground">Loading library...</p>
       )}
