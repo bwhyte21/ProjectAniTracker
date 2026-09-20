@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  animeById,
   searchAnime,
   seasonalPopularAnime,
   topAnime,
@@ -37,6 +38,14 @@ export function useTopAnime(count: number) {
   return useQuery({
     queryKey: ["anilist", "top", count],
     queryFn: () => topAnime(count),
+    retry: false,
+  });
+}
+
+export function useAnimeById(id: number) {
+  return useQuery({
+    queryKey: ["anilist", "anime", id],
+    queryFn: () => animeById(id),
     retry: false,
   });
 }

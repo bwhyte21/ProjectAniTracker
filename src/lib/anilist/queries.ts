@@ -1,6 +1,10 @@
 import { AniListError, anilistRequest } from "./client";
 import { getCurrentSeason } from "./season";
-import type { AniListMedia } from "./types";
+import type {
+  AniListMedia,
+  AnimeDetailMedia,
+  MediaRelationType,
+} from "./types";
 
 const MAX_SEARCH_LENGTH = 200;
 
@@ -65,6 +69,68 @@ const TOP_ANIME_DOCUMENT = `
   }
 `;
 
+const ANIME_DETAIL_DOCUMENT = `
+  query AnimeDetail($id: Int) {
+    Media(id: $id, type: ANIME) {
+        id
+        title {
+          romaji
+          english
+          native
+        }
+        coverImage {
+          large
+        }
+        episodes
+        status
+        season
+        seasonYear
+        averageScore
+        format
+        source
+        genres
+        studios {
+          nodes {
+            name
+          }
+        }
+        description
+        relations {
+          edges {
+            relationType
+            node {
+              id
+              type
+              title {
+                romaji
+                english
+              }
+              coverImage {
+                large
+              }
+              format
+            }
+          }
+        }
+    }
+  }
+`;
+
+// ADR-0004: related entries exist so a user can navigate between a show and
+// its sequels/prequels/side stories (including related movies). Source,
+// adaptation, and character edges point at non-anime or non-tracker content.
+const RELATED_RELATION_TYPES: readonly MediaRelationType[] = [
+  "PREQUEL",
+  "SEQUEL",
+  "PARENT",
+  "SIDE_STORY",
+  "SUMMARY",
+  "ALTERNATIVE",
+  "SPIN_OFF",
+  "COMPILATION",
+  "CONTAINS",
+];
+
 function extractMedia(data: unknown): AniListMedia[] {
   if (typeof data !== "object" || data === null) {
     throw new AniListError("AniList returned an unexpected response shape.");
@@ -108,4 +174,36 @@ export async function seasonalPopularAnime(): Promise<AniListMedia[]> {
 export async function topAnime(count: number): Promise<AniListMedia[]> {
   const data = await anilistRequest<unknown>(TOP_ANIME_DOCUMENT, { count });
   return extractMedia(data);
+}
+
+export async function animeById(id: number): Promise<AnimeDetailMedia> {
+  const data = await anilistRequest<unknown>(ANIME_DETAIL_DOCUMENT, { id });
+  if (typeof data !== "object" || data === null) {
+    throw new AniListError("AniList returned an unexpected response shape.");
+  }
+  const media = (data as Record<string, unknown>).Media;
+  if (typeof media !== "object" || media === null) {
+    throw new AniListError("AniList returned an unexpected response shape.");
+  }
+  return media as AnimeDetailMedia;
+}
+
+export function relatedAnime(detail: AnimeDetailMedia): AniListMedia[] {
+  const edges = detail.relations?.edges ?? [];
+  return edges
+    .filter(
+      (edge) =>
+        RELATED_RELATION_TYPES.includes(edge.relationType) &&
+        edge.node.type === "ANIME",
+    )
+    .map(({ node }) => ({
+      id: node.id,
+      title: node.title,
+      coverImage: node.coverImage,
+      episodes: null,
+      season: null,
+      seasonYear: null,
+      averageScore: null,
+      format: node.format,
+    }));
 }
