@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-22.04
+          - windows-latest
+          - macos-latest
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and upload to GitHub Release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "AniTracker ${{ github.ref_name }}"
+          releaseBody: |
+            Download the asset for your platform and run the installer.
+
+            **Windows (10+):** run the `-setup.exe` installer. Nothing else
+            needed -- WebView2 is preinstalled on Windows 10/11 and the
+            installer downloads it only if missing.
+
+            **macOS (10.15+, Apple Silicon):** open the `.dmg` and drag
+            AniTracker to Applications. Fully self-contained.
+
+            **Linux:** install the `.deb` (apt resolves webkit2gtk and
+            related dependencies), or run the `.AppImage`
+            (`chmod +x` first) -- the AppImage requires `webkit2gtk-4.1`,
+            which most desktop distros preinstall.
+
+            App data lives under `~/.config/com.bryan.anitracker/` (Linux)
+            or the equivalent app-data directory on your OS.
+          releaseDraft: true
+          prerelease: false
