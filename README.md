@@ -68,6 +68,28 @@ npm run tauri build
 
 Bundles are written to `src-tauri/target/release/bundle/`.
 
+## Installing from GitHub Releases
+
+Prebuilt installers are attached to each
+[GitHub Release](https://github.com/bwhyte21/ProjectAniTracker/releases).
+What your machine needs to run them:
+
+| Platform                    | Asset        | Handled by the installer                                           | Expected on your machine                                |
+| --------------------------- | ------------ | ------------------------------------------------------------------ | ------------------------------------------------------- |
+| Windows 10+                 | `-setup.exe` | App and all bundled libs; downloads WebView2 only if it is missing | Nothing extra                                           |
+| macOS 10.15+, Apple Silicon | `.dmg`       | Fully self-contained `.app`                                        | Nothing extra                                           |
+| Debian/Ubuntu/Mint          | `.deb`       | App; `apt` resolves webkit2gtk and related deps on install         | Nothing extra                                           |
+| Other Linux distros         | `.AppImage`  | App and most bundled libs                                          | `webkit2gtk-4.1` (preinstalled on most desktop distros) |
+
+Notes:
+
+- The macOS build targets Apple Silicon (arm64). Intel Macs are not
+  supported by the current release artifacts.
+- The AppImage needs execute permission: `chmod +x AniTracker_*.AppImage`.
+- App data (SQLite database and cover images) lives under
+  `~/.config/com.bryan.anitracker/` (Linux), the equivalent app-data
+  directories on Windows/macOS.
+
 ## Platform Setup
 
 ### Linux
@@ -92,7 +114,7 @@ For Arch or Fedora, use the equivalent package lists in the official
 
 Notes:
 
-- `npm run tauri build` produces `.deb`, `.rpm`, and AppImage bundles.
+- `npm run tauri build` produces `.deb` and AppImage bundles.
 - App data (SQLite database and cover images) lives under
   `~/.config/com.bryan.anitracker/`.
 
