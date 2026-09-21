@@ -24,12 +24,20 @@ const MIN_YEAR = 1960;
 const DEBOUNCE_MS = 400;
 const ANY = "all";
 
+// validateSearch receives a number from programmatic navigation and a string
+// when the URL is parsed (initial load, back/forward).
 function parseYear(value: unknown): number | undefined {
-  if (typeof value !== "string" || !/^\d+$/.test(value)) {
-    return undefined;
-  }
-  const year = Number(value);
-  if (year < MIN_YEAR || year > new Date().getFullYear() + 1) {
+  const year =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && /^\d+$/.test(value)
+        ? Number(value)
+        : Number.NaN;
+  if (
+    !Number.isInteger(year) ||
+    year < MIN_YEAR ||
+    year > new Date().getFullYear() + 1
+  ) {
     return undefined;
   }
   return year;
