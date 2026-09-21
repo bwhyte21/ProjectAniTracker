@@ -33,17 +33,17 @@ Architecture at a glance:
 
 ``` text
 +---------------------------- Tauri v2 app ----------------------------+
-|                                                                     |
-|  React frontend (Vite dev server / bundled dist)                    |
-|    |  TanStack Router + Query                                       |
-|    |                                                                |
-|    +--> HTTPS --> AniList GraphQL (browse/search data, online only) |
-|    |                                                                |
-|    +--> Tauri IPC --> Rust commands (save / update / delete / list) |
-|                          |                                          |
-|                          +--> SQLite (anitracker.db)               |
-|                          +--> cover images (app data dir)          |
-+---------------------------------------------------------------------+
+|                                                                      |
+|  React frontend (Vite dev server / bundled dist)                     |
+|    |  TanStack Router + Query                                        |
+|    |                                                                 |
+|    +--> HTTPS --> AniList GraphQL (browse/search data, online only)  |
+|    |                                                                 |
+|    +--> Tauri IPC --> Rust commands (save / update / delete / list)  |
+|                          |                                           |
+|                          +--> SQLite (anitracker.db)                 |
+|                          +--> cover images (app data dir)            |
++----------------------------------------------------------------------+
 ```
 
 ## Prerequisites
