@@ -1,18 +1,36 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
   animeById,
+  genreCollection,
   searchAnime,
   seasonalPopularAnime,
   topAnime,
   trendingAnime,
+  type SearchAnimeFilters,
 } from "./queries";
 import { getCurrentSeason } from "./season";
 
-export function useSearchAnime(search: string) {
+export function useSearchAnime(filters: SearchAnimeFilters) {
+  const hasQuery =
+    filters.search.trim().length > 0 ||
+    filters.genre !== undefined ||
+    filters.season !== undefined ||
+    filters.seasonYear !== undefined;
+  return useInfiniteQuery({
+    queryKey: ["anilist", "search", filters],
+    queryFn: ({ pageParam }) => searchAnime(filters, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _pages, lastPageParam) =>
+      lastPage.hasNextPage ? lastPageParam + 1 : undefined,
+    enabled: hasQuery,
+    retry: false,
+  });
+}
+
+export function useGenreCollection() {
   return useQuery({
-    queryKey: ["anilist", "search", search],
-    queryFn: () => searchAnime(search),
-    enabled: search.trim().length > 0,
+    queryKey: ["anilist", "genres"],
+    queryFn: genreCollection,
     retry: false,
   });
 }
