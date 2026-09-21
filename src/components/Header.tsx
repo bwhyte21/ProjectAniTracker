@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Moon, Sun } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Moon, Settings, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { getMatureContent, setMatureContent } from "@/lib/mature-content";
 import { getActiveTheme, toggleTheme, type Theme } from "@/lib/theme";
 
 const navLinks = [
@@ -16,6 +24,14 @@ const navLinks = [
 
 export function Header() {
   const [theme, setTheme] = useState<Theme>(getActiveTheme());
+  const [matureContent, setMatureContentState] = useState(getMatureContent());
+  const queryClient = useQueryClient();
+
+  const handleMatureContentChange = (enabled: boolean) => {
+    setMatureContent(enabled);
+    setMatureContentState(enabled);
+    queryClient.invalidateQueries({ queryKey: ["anilist"] });
+  };
 
   return (
     <header className="flex items-center justify-between p-4">
@@ -42,14 +58,33 @@ export function Header() {
           ))}
         </nav>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Toggle theme"
-        onClick={() => setTheme(toggleTheme())}
-      >
-        {theme === "dark" ? <Sun /> : <Moon />}
-      </Button>
+      <div className="flex items-center gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Settings">
+              <Settings />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <div className="flex items-center justify-between gap-4 px-2 py-1.5">
+              <span className="text-sm">Mature content</span>
+              <Switch
+                checked={matureContent}
+                onCheckedChange={handleMatureContentChange}
+                aria-label="Toggle mature content"
+              />
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Toggle theme"
+          onClick={() => setTheme(toggleTheme())}
+        >
+          {theme === "dark" ? <Sun /> : <Moon />}
+        </Button>
+      </div>
     </header>
   );
 }

@@ -75,6 +75,7 @@ export interface AnimeDetailTitle {
 export interface RelatedMedia {
   id: number;
   type: MediaType | null;
+  isAdult: boolean | null;
   title: MediaTitle;
   coverImage: MediaCoverImage | null;
   format: MediaFormat | null;
