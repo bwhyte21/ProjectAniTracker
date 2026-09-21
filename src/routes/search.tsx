@@ -7,6 +7,12 @@ import { Input } from "@/components/ui/input";
 import { useSearchAnime } from "@/lib/anilist/hooks";
 
 export const Route = createFileRoute("/search")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    q:
+      typeof search.q === "string" && search.q.trim().length > 0
+        ? search.q
+        : undefined,
+  }),
   component: SearchPage,
   errorComponent: RouteError,
 });
@@ -14,14 +20,31 @@ export const Route = createFileRoute("/search")({
 const DEBOUNCE_MS = 400;
 
 function SearchPage() {
-  const [input, setInput] = useState("");
-  const [search, setSearch] = useState("");
-  const { data, error, isPending, isError, refetch } = useSearchAnime(search);
+  const { q } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const [input, setInput] = useState(q ?? "");
+  const { data, error, isPending, isError, refetch } = useSearchAnime(q ?? "");
 
   useEffect(() => {
-    const timer = setTimeout(() => setSearch(input.trim()), DEBOUNCE_MS);
+    if (input.trim() === (q ?? "")) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      const query = input.trim();
+      navigate({
+        to: "/search",
+        search: { q: query.length > 0 ? query : undefined },
+        replace: true,
+      });
+    }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [input]);
+  }, [input, q, navigate]);
+
+  useEffect(() => {
+    if ((q ?? "") !== input.trim()) {
+      setInput(q ?? "");
+    }
+  }, [q]);
 
   return (
     <div className="flex flex-col gap-6 p-8">
@@ -34,12 +57,12 @@ function SearchPage() {
         aria-label="Search anime"
         className="max-w-md"
       />
-      {search.length === 0 && (
+      {(q ?? "").length === 0 && (
         <p className="text-sm text-muted-foreground">
           Type to search for anime.
         </p>
       )}
-      {search.length > 0 && isPending && (
+      {(q ?? "").length > 0 && isPending && (
         <p className="text-sm text-muted-foreground">Searching...</p>
       )}
       {isError && <OfflineState error={error} onRetry={refetch} />}
