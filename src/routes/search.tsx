@@ -26,15 +26,16 @@ function SearchPage() {
   const { data, error, isPending, isError, refetch } = useSearchAnime(q ?? "");
 
   useEffect(() => {
+    if (input.trim() === (q ?? "")) {
+      return;
+    }
     const timer = setTimeout(() => {
       const query = input.trim();
-      if (query !== (q ?? "")) {
-        navigate({
-          to: "/search",
-          search: { q: query.length > 0 ? query : undefined },
-          replace: true,
-        });
-      }
+      navigate({
+        to: "/search",
+        search: { q: query.length > 0 ? query : undefined },
+        replace: true,
+      });
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [input, q, navigate]);

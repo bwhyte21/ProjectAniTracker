@@ -135,13 +135,9 @@ function AnimeDetailPage() {
 }
 
 function AnimeDetail({ animeId }: { animeId: number }) {
-  const {
-    data: detail,
-    error,
-    isPending,
-    isError,
-    refetch,
-  } = useAnimeById(animeId);
+  const { data: detail, error, isPending, isError, refetch } = useAnimeById(
+    animeId,
+  );
   const { data: library, isPending: libraryIsPending } = useLibrary();
   const tracked =
     library?.find((anime) => anime.anilist_id === animeId) ?? null;
@@ -274,7 +270,10 @@ function TrackedAnimeDetail({
 }) {
   const seasonText =
     tracked.season || tracked.year
-      ? [tracked.season ? humanizeEnum(tracked.season) : null, tracked.year]
+      ? [
+          tracked.season ? humanizeEnum(tracked.season) : null,
+          tracked.year,
+        ]
           .filter(Boolean)
           .join(" ")
       : null;
