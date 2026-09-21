@@ -161,7 +161,7 @@ function AnimeDetail({ animeId }: { animeId: number }) {
           <CoverImage
             src={detail.coverImage?.large}
             alt={`Cover image for ${title}`}
-            className="aspect-[2/3] w-full rounded-xl object-cover"
+            className="aspect-2/3 w-full rounded-xl object-cover"
           />
           <TrackingControls
             detail={detail}
@@ -270,7 +270,7 @@ function TrackedAnimeDetail({
           <CoverImage
             src={convertFileSrc(tracked.cover_image_path)}
             alt={`Cover image for ${tracked.title}`}
-            className="aspect-[2/3] w-full rounded-xl object-cover"
+            className="aspect-2/3 w-full rounded-xl object-cover"
           />
           <TrackingControls
             detail={null}

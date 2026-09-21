@@ -11,6 +11,7 @@ const navLinks = [
   { to: "/season", label: "Season" },
   { to: "/trending", label: "Trending" },
   { to: "/top", label: "Top" },
+  { to: "/about", label: "About" },
 ] as const;
 
 export function Header() {

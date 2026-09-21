@@ -92,8 +92,7 @@ async fn download_cover(app: &AppHandle, anilist_id: i64, url: &str) -> Result<S
         .await
         .map_err(|e| format!("failed to read cover image: {e}"))?;
 
-    std::fs::write(&file_path, &bytes)
-        .map_err(|e| format!("failed to write cover image: {e}"))?;
+    std::fs::write(&file_path, &bytes).map_err(|e| format!("failed to write cover image: {e}"))?;
     Ok(file_path.to_string_lossy().into_owned())
 }
 
@@ -205,12 +204,10 @@ pub async fn delete_anime(app: AppHandle, anilist_id: i64) -> Result<(), String>
 #[tauri::command]
 pub async fn get_library(app: AppHandle) -> Result<Vec<TrackedAnime>, String> {
     let pool = db_pool(&app).await?;
-    let rows = sqlx::query(
-        "SELECT * FROM tracked_anime ORDER BY saved_at DESC, anilist_id DESC",
-    )
-    .fetch_all(&pool)
-    .await
-    .map_err(|e| format!("failed to load library: {e}"))?;
+    let rows = sqlx::query("SELECT * FROM tracked_anime ORDER BY saved_at DESC, anilist_id DESC")
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| format!("failed to load library: {e}"))?;
 
     Ok(rows.iter().map(row_to_tracked_anime).collect())
 }
