@@ -1,4 +1,5 @@
 import { AniListError, anilistRequest } from "./client";
+import { getMatureContent } from "@/lib/mature-content";
 import { getCurrentSeason } from "./season";
 import type {
   AniListMedia,
@@ -24,31 +25,39 @@ const MEDIA_FIELDS = `
         format
 `;
 
-const SEARCH_ANIME_DOCUMENT = `
+// ADR-0008: `isAdult: false` excludes adult-flagged media. AniList treats an
+// explicit `isAdult: null` as an equality filter matching nothing (verified
+// against the live API), so the argument is omitted entirely when the
+// mature-content toggle is on.
+function isAdultArg(): string {
+  return getMatureContent() ? "" : "isAdult: false, ";
+}
+
+const searchAnimeDocument = (isAdult: string) => `
   query SearchAnime($search: String) {
     Page {
-      media(type: ANIME, search: $search) {
+      media(${isAdult}type: ANIME, search: $search) {
         ${MEDIA_FIELDS}
       }
     }
   }
 `;
 
-const TRENDING_ANIME_DOCUMENT = `
+const trendingAnimeDocument = (isAdult: string) => `
   query TrendingAnime {
     Page {
-      media(type: ANIME, sort: TRENDING_DESC) {
+      media(${isAdult}type: ANIME, sort: TRENDING_DESC) {
         ${MEDIA_FIELDS}
       }
     }
   }
 `;
 
-const SEASONAL_POPULAR_ANIME_DOCUMENT = `
+const seasonalPopularAnimeDocument = (isAdult: string) => `
   query SeasonalPopularAnime($season: MediaSeason, $seasonYear: Int) {
     Page {
       media(
-        type: ANIME
+        ${isAdult}type: ANIME
         season: $season
         seasonYear: $seasonYear
         sort: POPULARITY_DESC
@@ -59,10 +68,10 @@ const SEASONAL_POPULAR_ANIME_DOCUMENT = `
   }
 `;
 
-const TOP_ANIME_DOCUMENT = `
+const topAnimeDocument = (isAdult: string) => `
   query TopAnime($count: Int) {
     Page(perPage: $count) {
-      media(type: ANIME, sort: SCORE_DESC) {
+      media(${isAdult}type: ANIME, sort: SCORE_DESC) {
         ${MEDIA_FIELDS}
       }
     }
@@ -101,6 +110,7 @@ const ANIME_DETAIL_DOCUMENT = `
             node {
               id
               type
+              isAdult
               title {
                 romaji
                 english
@@ -151,28 +161,33 @@ export async function searchAnime(search: string): Promise<AniListMedia[]> {
   if (trimmed.length === 0) {
     throw new AniListError("Search query must not be empty.");
   }
-  const data = await anilistRequest<unknown>(SEARCH_ANIME_DOCUMENT, {
-    search: trimmed,
-  });
+  const data = await anilistRequest<unknown>(
+    searchAnimeDocument(isAdultArg()),
+    { search: trimmed },
+  );
   return extractMedia(data);
 }
 
 export async function trendingAnime(): Promise<AniListMedia[]> {
-  const data = await anilistRequest<unknown>(TRENDING_ANIME_DOCUMENT);
+  const data = await anilistRequest<unknown>(
+    trendingAnimeDocument(isAdultArg()),
+  );
   return extractMedia(data);
 }
 
 export async function seasonalPopularAnime(): Promise<AniListMedia[]> {
   const { season, seasonYear } = getCurrentSeason();
-  const data = await anilistRequest<unknown>(SEASONAL_POPULAR_ANIME_DOCUMENT, {
-    season,
-    seasonYear,
-  });
+  const data = await anilistRequest<unknown>(
+    seasonalPopularAnimeDocument(isAdultArg()),
+    { season, seasonYear },
+  );
   return extractMedia(data);
 }
 
 export async function topAnime(count: number): Promise<AniListMedia[]> {
-  const data = await anilistRequest<unknown>(TOP_ANIME_DOCUMENT, { count });
+  const data = await anilistRequest<unknown>(topAnimeDocument(isAdultArg()), {
+    count,
+  });
   return extractMedia(data);
 }
 
@@ -190,11 +205,13 @@ export async function animeById(id: number): Promise<AnimeDetailMedia> {
 
 export function relatedAnime(detail: AnimeDetailMedia): AniListMedia[] {
   const edges = detail.relations?.edges ?? [];
+  const allowAdult = getMatureContent();
   return edges
     .filter(
       (edge) =>
         RELATED_RELATION_TYPES.includes(edge.relationType) &&
-        edge.node.type === "ANIME",
+        edge.node.type === "ANIME" &&
+        (allowAdult || edge.node.isAdult !== true),
     )
     .map(({ node }) => ({
       id: node.id,

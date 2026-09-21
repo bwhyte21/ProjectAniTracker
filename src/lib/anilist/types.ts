@@ -1,13 +1,7 @@
 export type MediaSeason = "WINTER" | "SPRING" | "SUMMER" | "FALL";
 
 export type MediaFormat =
-  | "TV"
-  | "TV_SHORT"
-  | "MOVIE"
-  | "SPECIAL"
-  | "OVA"
-  | "ONA"
-  | "MUSIC";
+  "TV" | "TV_SHORT" | "MOVIE" | "SPECIAL" | "OVA" | "ONA" | "MUSIC";
 
 export type MediaStatus =
   "FINISHED" | "RELEASING" | "NOT_YET_RELEASED" | "CANCELLED" | "HIATUS";
@@ -75,6 +69,7 @@ export interface AnimeDetailTitle {
 export interface RelatedMedia {
   id: number;
   type: MediaType | null;
+  isAdult: boolean | null;
   title: MediaTitle;
   coverImage: MediaCoverImage | null;
   format: MediaFormat | null;
