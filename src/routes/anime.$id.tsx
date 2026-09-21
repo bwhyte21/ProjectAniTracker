@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { Minus, Plus } from "lucide-react";
+import { ArrowLeft, Minus, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { AnimeCard } from "@/components/anime/AnimeCard";
 import { CoverImage } from "@/components/anime/CoverImage";
@@ -104,6 +104,7 @@ function InfoRow({ label, value }: { label: string; value: ReactNode }) {
 
 function AnimeDetailPage() {
   const { id } = Route.useParams();
+  const router = useRouter();
   const animeId = parseAnimeId(id);
 
   if (animeId === null) {
@@ -115,13 +116,32 @@ function AnimeDetailPage() {
     );
   }
 
-  return <AnimeDetail animeId={animeId} />;
+  return (
+    <>
+      {router.history.canGoBack() && (
+        <div className="px-8 pt-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.history.back()}
+          >
+            <ArrowLeft /> Back
+          </Button>
+        </div>
+      )}
+      <AnimeDetail animeId={animeId} />
+    </>
+  );
 }
 
 function AnimeDetail({ animeId }: { animeId: number }) {
-  const { data: detail, error, isPending, isError, refetch } = useAnimeById(
-    animeId,
-  );
+  const {
+    data: detail,
+    error,
+    isPending,
+    isError,
+    refetch,
+  } = useAnimeById(animeId);
   const { data: library, isPending: libraryIsPending } = useLibrary();
   const tracked =
     library?.find((anime) => anime.anilist_id === animeId) ?? null;
@@ -254,10 +274,7 @@ function TrackedAnimeDetail({
 }) {
   const seasonText =
     tracked.season || tracked.year
-      ? [
-          tracked.season ? humanizeEnum(tracked.season) : null,
-          tracked.year,
-        ]
+      ? [tracked.season ? humanizeEnum(tracked.season) : null, tracked.year]
           .filter(Boolean)
           .join(" ")
       : null;
