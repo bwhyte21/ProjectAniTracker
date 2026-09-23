@@ -1,16 +1,8 @@
 export type MediaSeason = "WINTER" | "SPRING" | "SUMMER" | "FALL";
 
-export type MediaFormat =
-  | "TV"
-  | "TV_SHORT"
-  | "MOVIE"
-  | "SPECIAL"
-  | "OVA"
-  | "ONA"
-  | "MUSIC";
+export type MediaFormat = "TV" | "TV_SHORT" | "MOVIE" | "SPECIAL" | "OVA" | "ONA" | "MUSIC";
 
-export type MediaStatus =
-  "FINISHED" | "RELEASING" | "NOT_YET_RELEASED" | "CANCELLED" | "HIATUS";
+export type MediaStatus = "FINISHED" | "RELEASING" | "NOT_YET_RELEASED" | "CANCELLED" | "HIATUS";
 
 export type MediaSource =
   | "ORIGINAL"

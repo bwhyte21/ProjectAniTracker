@@ -36,11 +36,7 @@ export function Header() {
   return (
     <header className="flex items-center justify-between p-4">
       <div className="flex items-center gap-6">
-        <Link
-          to="/"
-          className="text-lg font-bold"
-          activeProps={{ className: "text-foreground" }}
-        >
+        <Link to="/" className="text-lg font-bold" activeProps={{ className: "text-foreground" }}>
           AniTracker
         </Link>
         <nav className="flex items-center gap-1">

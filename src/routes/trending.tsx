@@ -15,11 +15,7 @@ function TrendingPage() {
   return (
     <div className="flex flex-col gap-6 p-8">
       <h1 className="text-3xl font-bold">Trending Now</h1>
-      {isPending && (
-        <p className="text-sm text-muted-foreground">
-          Loading trending anime...
-        </p>
-      )}
+      {isPending && <p className="text-sm text-muted-foreground">Loading trending anime...</p>}
       {isError && <OfflineState error={error} onRetry={refetch} />}
       {data && data.length === 0 && (
         <p className="text-sm text-muted-foreground">No anime found.</p>

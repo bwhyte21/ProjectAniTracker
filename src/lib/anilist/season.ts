@@ -50,11 +50,7 @@ export function deriveSeason(
   if (startDate?.year == null || startDate.month == null) {
     return { season, seasonYear };
   }
-  const start = new Date(
-    startDate.year,
-    startDate.month - 1,
-    startDate.day ?? 1,
-  );
+  const start = new Date(startDate.year, startDate.month - 1, startDate.day ?? 1);
   if (start.getTime() > now.getTime()) {
     return { season, seasonYear };
   }

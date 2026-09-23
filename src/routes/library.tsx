@@ -18,9 +18,7 @@ const LIBRARY_TABS: { value: WatchStatus | "all"; label: string }[] = [
 export const Route = createFileRoute("/library")({
   validateSearch: (search: Record<string, unknown>) => ({
     status:
-      typeof search.status === "string" && isWatchStatus(search.status)
-        ? search.status
-        : undefined,
+      typeof search.status === "string" && isWatchStatus(search.status) ? search.status : undefined,
   }),
   component: LibraryPage,
 });
@@ -34,10 +32,7 @@ function LibraryPage() {
   function handleTabChange(value: string) {
     navigate({
       to: "/library",
-      search:
-        value === "all"
-          ? { status: undefined }
-          : { status: value as WatchStatus },
+      search: value === "all" ? { status: undefined } : { status: value as WatchStatus },
     });
   }
 
@@ -54,21 +49,14 @@ function LibraryPage() {
         </TabsList>
       </Tabs>
       {!online && <OfflineNotice />}
-      {isPending && (
-        <p className="text-sm text-muted-foreground">Loading library...</p>
-      )}
+      {isPending && <p className="text-sm text-muted-foreground">Loading library...</p>}
       {isError && (
-        <p className="text-sm text-muted-foreground">
-          Failed to load library: {error.message}
-        </p>
+        <p className="text-sm text-muted-foreground">Failed to load library: {error.message}</p>
       )}
       {data && data.length === 0 && (
         <p className="text-sm text-muted-foreground">
           Nothing here yet.{" "}
-          <Link
-            to="/"
-            className="font-medium text-foreground underline underline-offset-4"
-          >
+          <Link to="/" className="font-medium text-foreground underline underline-offset-4">
             Browse to add anime.
           </Link>
         </p>

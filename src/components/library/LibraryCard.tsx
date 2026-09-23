@@ -22,17 +22,13 @@ export function LibraryCard({ anime }: LibraryCardProps) {
           className="aspect-[2/3] w-full object-cover"
         />
         <div className="flex flex-col gap-1 px-3 py-3">
-          <h3 className="line-clamp-2 text-sm leading-snug font-medium">
-            {anime.title}
-          </h3>
+          <h3 className="line-clamp-2 text-sm leading-snug font-medium">{anime.title}</h3>
           <p className="text-xs text-muted-foreground">
             {anime.episode_count !== null
               ? `${anime.episodes_seen} / ${anime.episode_count} episodes`
               : `${anime.episodes_seen} episodes`}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {WATCH_STATUS_LABELS[anime.status]}
-          </p>
+          <p className="text-xs text-muted-foreground">{WATCH_STATUS_LABELS[anime.status]}</p>
         </div>
       </Card>
     </Link>

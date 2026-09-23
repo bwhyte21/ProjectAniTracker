@@ -31,9 +31,7 @@ export function updateWatchStatus(args: UpdateWatchStatusArgs): Promise<void> {
   return invoke("update_watch_status", { ...args });
 }
 
-export function updateEpisodesSeen(
-  args: UpdateEpisodesSeenArgs,
-): Promise<void> {
+export function updateEpisodesSeen(args: UpdateEpisodesSeenArgs): Promise<void> {
   return invoke("update_episodes_seen", { ...args });
 }
 
@@ -45,8 +43,6 @@ export function getLibrary(): Promise<TrackedAnime[]> {
   return invoke("get_library");
 }
 
-export function getLibraryByStatus(
-  status: WatchStatus,
-): Promise<TrackedAnime[]> {
+export function getLibraryByStatus(status: WatchStatus): Promise<TrackedAnime[]> {
   return invoke("get_library_by_status", { status });
 }

@@ -14,9 +14,7 @@ export class AniListRateLimitError extends AniListError {
   readonly retryAfterSeconds: number;
 
   constructor(retryAfterSeconds: number) {
-    super(
-      `AniList rate limit reached. Retry in ${retryAfterSeconds} seconds.`,
-    );
+    super(`AniList rate limit reached. Retry in ${retryAfterSeconds} seconds.`);
     this.name = "AniListRateLimitError";
     this.retryAfterSeconds = retryAfterSeconds;
   }
@@ -41,9 +39,7 @@ function timeoutAfter(ms: number): Promise<never> {
 }
 
 function rateLimitError(response: Response): AniListRateLimitError {
-  const retryAfter = Number.parseFloat(
-    response.headers.get("Retry-After") ?? "",
-  );
+  const retryAfter = Number.parseFloat(response.headers.get("Retry-After") ?? "");
   const retryAfterSeconds =
     Number.isFinite(retryAfter) && retryAfter > 0
       ? Math.ceil(retryAfter)
@@ -60,22 +56,16 @@ function readErrors(body: unknown): GraphQLError[] {
     return [];
   }
   return errors.filter(
-    (error): error is GraphQLError =>
-      typeof error === "object" && error !== null,
+    (error): error is GraphQLError => typeof error === "object" && error !== null,
   );
 }
 
-async function fetchAniList<T>(
-  query: string,
-  variables: Record<string, unknown>,
-): Promise<T> {
+async function fetchAniList<T>(query: string, variables: Record<string, unknown>): Promise<T> {
   // WebKit can leave an offline fetch pending instead of rejecting it, so
   // fail fast while the webview reports no connection rather than waiting
   // on the request timeout.
   if (!navigator.onLine) {
-    throw new AniListError(
-      "Could not reach AniList. Check your network connection.",
-    );
+    throw new AniListError("Could not reach AniList. Check your network connection.");
   }
   let response: Response;
   try {
@@ -95,9 +85,7 @@ async function fetchAniList<T>(
       timeoutAfter(REQUEST_TIMEOUT_MS),
     ]);
   } catch {
-    throw new AniListError(
-      "Could not reach AniList. Check your network connection.",
-    );
+    throw new AniListError("Could not reach AniList. Check your network connection.");
   }
 
   if (response.status === 429) {
@@ -116,21 +104,13 @@ async function fetchAniList<T>(
     throw rateLimitError(response);
   }
   if (errors.length > 0) {
-    throw new AniListError(
-      errors[0]?.message ?? "AniList returned an error.",
-    );
+    throw new AniListError(errors[0]?.message ?? "AniList returned an error.");
   }
   if (!response.ok) {
-    throw new AniListError(
-      `AniList request failed with status ${response.status}.`,
-    );
+    throw new AniListError(`AniList request failed with status ${response.status}.`);
   }
 
-  if (
-    typeof body !== "object" ||
-    body === null ||
-    (body as Record<string, unknown>).data == null
-  ) {
+  if (typeof body !== "object" || body === null || (body as Record<string, unknown>).data == null) {
     throw new AniListError("AniList returned an unexpected response shape.");
   }
   return (body as { data: T }).data;

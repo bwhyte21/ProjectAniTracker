@@ -12,8 +12,7 @@
           var theme = stored === "light" || stored === "dark" ? stored : null;
           if (!theme) {
             theme =
-              window.matchMedia &&
-              window.matchMedia("(prefers-color-scheme: light)").matches
+              window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
                 ? "light"
                 : "dark";
           }

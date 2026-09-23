@@ -43,12 +43,7 @@ export function useSaveAnime() {
         saved_at: "",
       };
       const seed = (old: TrackedAnime[] | undefined) =>
-        old
-          ? [
-              ...old.filter((anime) => anime.anilist_id !== args.anilistId),
-              optimistic,
-            ]
-          : old;
+        old ? [...old.filter((anime) => anime.anilist_id !== args.anilistId), optimistic] : old;
       queryClient.setQueryData(["library", "all"], seed);
       queryClient.setQueryData(["library", args.status], seed);
       return { previous };

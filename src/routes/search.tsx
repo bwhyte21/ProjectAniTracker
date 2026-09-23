@@ -14,12 +14,7 @@ import {
 import { useGenreCollection, useSearchAnime } from "@/lib/anilist/hooks";
 import type { MediaSeason } from "@/lib/anilist/types";
 
-const SEASON_OPTIONS: readonly MediaSeason[] = [
-  "WINTER",
-  "SPRING",
-  "SUMMER",
-  "FALL",
-];
+const SEASON_OPTIONS: readonly MediaSeason[] = ["WINTER", "SPRING", "SUMMER", "FALL"];
 const MIN_YEAR = 1960;
 const DEBOUNCE_MS = 400;
 const ANY = "all";
@@ -33,11 +28,7 @@ function parseYear(value: unknown): number | undefined {
       : typeof value === "string" && /^\d+$/.test(value)
         ? Number(value)
         : Number.NaN;
-  if (
-    !Number.isInteger(year) ||
-    year < MIN_YEAR ||
-    year > new Date().getFullYear() + 1
-  ) {
+  if (!Number.isInteger(year) || year < MIN_YEAR || year > new Date().getFullYear() + 1) {
     return undefined;
   }
   return year;
@@ -49,17 +40,10 @@ function seasonLabel(season: MediaSeason): string {
 
 export const Route = createFileRoute("/search")({
   validateSearch: (search: Record<string, unknown>) => ({
-    q:
-      typeof search.q === "string" && search.q.trim().length > 0
-        ? search.q
-        : undefined,
-    genre:
-      typeof search.genre === "string" && search.genre.length > 0
-        ? search.genre
-        : undefined,
+    q: typeof search.q === "string" && search.q.trim().length > 0 ? search.q : undefined,
+    genre: typeof search.genre === "string" && search.genre.length > 0 ? search.genre : undefined,
     season:
-      typeof search.season === "string" &&
-      SEASON_OPTIONS.includes(search.season as MediaSeason)
+      typeof search.season === "string" && SEASON_OPTIONS.includes(search.season as MediaSeason)
         ? (search.season as MediaSeason)
         : undefined,
     year: parseYear(search.year),
@@ -89,8 +73,7 @@ function SearchPage() {
     seasonYear: year,
   });
 
-  const hasFilters =
-    genre !== undefined || season !== undefined || year !== undefined;
+  const hasFilters = genre !== undefined || season !== undefined || year !== undefined;
   const media = data?.pages.flatMap((page) => page.media) ?? [];
 
   useEffect(() => {
@@ -117,11 +100,7 @@ function SearchPage() {
     }
   }, [q]);
 
-  function updateFilters(patch: {
-    genre?: string;
-    season?: MediaSeason;
-    year?: number;
-  }) {
+  function updateFilters(patch: { genre?: string; season?: MediaSeason; year?: number }) {
     navigate({ to: "/search", search: (prev) => ({ ...prev, ...patch }) });
   }
 
@@ -139,9 +118,7 @@ function SearchPage() {
         />
         <Select
           value={genre ?? ANY}
-          onValueChange={(value) =>
-            updateFilters({ genre: value === ANY ? undefined : value })
-          }
+          onValueChange={(value) => updateFilters({ genre: value === ANY ? undefined : value })}
         >
           <SelectTrigger className="w-36" aria-label="Genre">
             <SelectValue placeholder="Genre" />
@@ -198,19 +175,13 @@ function SearchPage() {
         </Select>
       </div>
       {!q && !hasFilters && (
-        <p className="text-sm text-muted-foreground">
-          Type to search for anime.
-        </p>
+        <p className="text-sm text-muted-foreground">Type to search for anime.</p>
       )}
       {(q || hasFilters) && isPending && (
         <p className="text-sm text-muted-foreground">Searching...</p>
       )}
-      {isError && media.length === 0 && (
-        <OfflineState error={error} onRetry={refetch} />
-      )}
-      {isError && media.length > 0 && (
-        <OfflineNotice message={error.message} onRetry={refetch} />
-      )}
+      {isError && media.length === 0 && <OfflineState error={error} onRetry={refetch} />}
+      {isError && media.length > 0 && <OfflineNotice message={error.message} onRetry={refetch} />}
       {!isPending && !isError && media.length === 0 && (
         <p className="text-sm text-muted-foreground">No anime found.</p>
       )}
@@ -223,9 +194,7 @@ function SearchPage() {
           />
         </>
       )}
-      {isFetchingNextPage && (
-        <p className="text-sm text-muted-foreground">Loading more...</p>
-      )}
+      {isFetchingNextPage && <p className="text-sm text-muted-foreground">Loading more...</p>}
     </div>
   );
 }
@@ -235,10 +204,7 @@ interface InfiniteScrollSentinelProps {
   onLoadMore: () => void;
 }
 
-function InfiniteScrollSentinel({
-  enabled,
-  onLoadMore,
-}: InfiniteScrollSentinelProps) {
+function InfiniteScrollSentinel({ enabled, onLoadMore }: InfiniteScrollSentinelProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
