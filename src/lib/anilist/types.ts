@@ -66,6 +66,12 @@ export interface AniListMedia {
   format: MediaFormat | null;
 }
 
+export interface FuzzyDate {
+  year: number | null;
+  month: number | null;
+  day: number | null;
+}
+
 export interface AnimeDetailTitle {
   romaji: string | null;
   english: string | null;
@@ -95,6 +101,7 @@ export interface AnimeDetailMedia {
   status: MediaStatus | null;
   season: MediaSeason | null;
   seasonYear: number | null;
+  startDate: FuzzyDate | null;
   averageScore: number | null;
   format: MediaFormat | null;
   source: MediaSource | null;

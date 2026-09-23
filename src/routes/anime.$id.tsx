@@ -22,10 +22,10 @@ import {
 } from "@/components/ui/select";
 import { useAnimeById } from "@/lib/anilist/hooks";
 import { relatedAnime } from "@/lib/anilist/queries";
+import { deriveSeason, SEASON_LABELS } from "@/lib/anilist/season";
 import type {
   AnimeDetailMedia,
   MediaFormat,
-  MediaSeason,
 } from "@/lib/anilist/types";
 import {
   useDeleteAnime,
@@ -55,13 +55,6 @@ const FORMAT_LABELS: Record<MediaFormat, string> = {
   OVA: "OVA",
   ONA: "ONA",
   MUSIC: "Music",
-};
-
-const SEASON_LABELS: Record<MediaSeason, string> = {
-  WINTER: "Winter",
-  SPRING: "Spring",
-  SUMMER: "Summer",
-  FALL: "Fall",
 };
 
 function parseAnimeId(param: string): number | null {
@@ -161,10 +154,13 @@ function AnimeDetail({ animeId }: { animeId: number }) {
 
   const related = relatedAnime(detail);
   const title = detail.title.english ?? detail.title.romaji ?? "Unknown title";
+  const { season, seasonYear } = deriveSeason(
+    detail.startDate,
+    detail.season,
+    detail.seasonYear,
+  );
   const seasonText =
-    detail.season && detail.seasonYear
-      ? `${SEASON_LABELS[detail.season]} ${detail.seasonYear}`
-      : null;
+    season && seasonYear ? `${SEASON_LABELS[season]} ${seasonYear}` : null;
   const studios = (detail.studios?.nodes ?? [])
     .map((studio) => studio.name)
     .join(", ");
@@ -343,13 +339,18 @@ function TrackingControls({
     if (!detail) {
       return;
     }
+    const { season, seasonYear } = deriveSeason(
+      detail.startDate,
+      detail.season,
+      detail.seasonYear,
+    );
     saveAnimeMutation.mutate({
       anilistId: detail.id,
       title,
       coverImageUrl: cover,
       episodeCount: detail.episodes,
-      season: detail.season,
-      year: detail.seasonYear,
+      season,
+      year: seasonYear,
       format: detail.format,
       status,
       episodesSeen:

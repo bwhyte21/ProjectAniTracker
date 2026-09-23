@@ -85,6 +85,11 @@ const ANIME_DETAIL_DOCUMENT = `
         status
         season
         seasonYear
+        startDate {
+          year
+          month
+          day
+        }
         averageScore
         format
         source
