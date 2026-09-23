@@ -72,7 +72,7 @@ function AboutPage() {
       <p className="max-w-md text-sm text-muted-foreground">
         Built with{" "}
         <Heart
-          className="inline-block size-4 animate-heartbeat text-destructive"
+          className="animate-heartbeat inline-block size-4 text-destructive"
           fill="currentColor"
           aria-hidden="true"
         />{" "}

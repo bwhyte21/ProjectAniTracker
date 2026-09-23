@@ -31,7 +31,7 @@ are no profiles, accounts, or social features -- the app is only a private track
 
 Architecture at a glance:
 
-``` text
+```text
 +---------------------------- Tauri v2 app ----------------------------+
 |                                                                      |
 |  React frontend (Vite dev server / bundled dist)                     |

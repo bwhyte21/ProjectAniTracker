@@ -14,9 +14,7 @@ export class AniListRateLimitError extends AniListError {
   readonly retryAfterSeconds: number;
 
   constructor(retryAfterSeconds: number) {
-    super(
-      `AniList rate limit reached. Retry in ${retryAfterSeconds} seconds.`,
-    );
+    super(`AniList rate limit reached. Retry in ${retryAfterSeconds} seconds.`);
     this.name = "AniListRateLimitError";
     this.retryAfterSeconds = retryAfterSeconds;
   }
@@ -116,9 +114,7 @@ async function fetchAniList<T>(
     throw rateLimitError(response);
   }
   if (errors.length > 0) {
-    throw new AniListError(
-      errors[0]?.message ?? "AniList returned an error.",
-    );
+    throw new AniListError(errors[0]?.message ?? "AniList returned an error.");
   }
   if (!response.ok) {
     throw new AniListError(

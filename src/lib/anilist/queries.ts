@@ -174,8 +174,7 @@ function extractSearchPage(data: unknown): SearchAnimeResult {
   }
   return {
     media: media as AniListMedia[],
-    hasNextPage: (pageInfo as Record<string, unknown>)
-      .hasNextPage as boolean,
+    hasNextPage: (pageInfo as Record<string, unknown>).hasNextPage as boolean,
   };
 }
 

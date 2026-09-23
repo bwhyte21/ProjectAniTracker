@@ -36,8 +36,8 @@ function SeasonPage() {
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            The season currently airing. The winter block starts in December,
-            so it carries the next year's label.
+            The season currently airing. The winter block starts in December, so
+            it carries the next year's label.
           </TooltipContent>
         </Tooltip>
       </h1>

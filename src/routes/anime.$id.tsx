@@ -23,10 +23,7 @@ import {
 import { useAnimeById } from "@/lib/anilist/hooks";
 import { relatedAnime } from "@/lib/anilist/queries";
 import { deriveSeason, SEASON_LABELS } from "@/lib/anilist/season";
-import type {
-  AnimeDetailMedia,
-  MediaFormat,
-} from "@/lib/anilist/types";
+import type { AnimeDetailMedia, MediaFormat } from "@/lib/anilist/types";
 import {
   useDeleteAnime,
   useLibrary,
@@ -128,9 +125,13 @@ function AnimeDetailPage() {
 }
 
 function AnimeDetail({ animeId }: { animeId: number }) {
-  const { data: detail, error, isPending, isError, refetch } = useAnimeById(
-    animeId,
-  );
+  const {
+    data: detail,
+    error,
+    isPending,
+    isError,
+    refetch,
+  } = useAnimeById(animeId);
   const { data: library, isPending: libraryIsPending } = useLibrary();
   const tracked =
     library?.find((anime) => anime.anilist_id === animeId) ?? null;
@@ -266,10 +267,7 @@ function TrackedAnimeDetail({
 }) {
   const seasonText =
     tracked.season || tracked.year
-      ? [
-          tracked.season ? humanizeEnum(tracked.season) : null,
-          tracked.year,
-        ]
+      ? [tracked.season ? humanizeEnum(tracked.season) : null, tracked.year]
           .filter(Boolean)
           .join(" ")
       : null;
@@ -399,8 +397,7 @@ function TrackingControls({
                   anilistId: tracked.anilist_id,
                   status: value,
                 });
-                const episodeCount =
-                  detail?.episodes ?? tracked.episode_count;
+                const episodeCount = detail?.episodes ?? tracked.episode_count;
                 if (value === "completed" && episodeCount !== null) {
                   updateEpisodesSeenMutation.mutate({
                     anilistId: tracked.anilist_id,
