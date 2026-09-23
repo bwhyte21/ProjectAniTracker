@@ -48,3 +48,21 @@ test("save round trip: add, library tab, update status and episodes, remove", as
   await page.getByRole("link", { name: "Library", exact: true }).click();
   await expect(page.getByText("Nothing here yet.")).toBeVisible();
 });
+
+test("a rejected save shows an error toast and rolls back to the button", async ({ page }) => {
+  await page.goto("/anime/21");
+  await expect(page.getByRole("heading", { name: "Sousou no Frieren", exact: true })).toBeVisible();
+
+  await page.evaluate(() => {
+    (window as Window & { __E2E_FAIL_SAVE?: boolean }).__E2E_FAIL_SAVE = true;
+  });
+
+  await page.getByRole("button", { name: "Add to Library" }).click();
+  await page.getByRole("menuitem", { name: "Plan to Watch" }).click();
+
+  // The failed mutation surfaces an error toast (Phase 20) alongside the
+  // in-page error state ...
+  await expect(page.locator("[data-sonner-toast]").getByText("mock save failed")).toBeVisible();
+  // ... and the optimistic save rolls back to the Add to Library button.
+  await expect(page.getByRole("button", { name: "Add to Library" })).toBeVisible();
+});
