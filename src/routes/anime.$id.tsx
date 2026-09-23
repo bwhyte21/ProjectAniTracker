@@ -352,7 +352,10 @@ function TrackingControls({
       year: detail.seasonYear,
       format: detail.format,
       status,
-      episodesSeen: 0,
+      episodesSeen:
+        status === "completed" && detail.episodes !== null
+          ? detail.episodes
+          : 0,
     });
   }
 
@@ -388,10 +391,19 @@ function TrackingControls({
               value={tracked.status}
               aria-label="Watch status"
               onValueChange={(value) => {
-                if (isWatchStatus(value)) {
-                  updateWatchStatusMutation.mutate({
+                if (!isWatchStatus(value)) {
+                  return;
+                }
+                updateWatchStatusMutation.mutate({
+                  anilistId: tracked.anilist_id,
+                  status: value,
+                });
+                const episodeCount =
+                  detail?.episodes ?? tracked.episode_count;
+                if (value === "completed" && episodeCount !== null) {
+                  updateEpisodesSeenMutation.mutate({
                     anilistId: tracked.anilist_id,
-                    status: value,
+                    episodesSeen: episodeCount,
                   });
                 }
               }}

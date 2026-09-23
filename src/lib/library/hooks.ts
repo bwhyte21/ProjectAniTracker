@@ -7,7 +7,7 @@ import {
   updateEpisodesSeen,
   updateWatchStatus,
 } from "./ipc";
-import type { WatchStatus } from "./types";
+import type { TrackedAnime, WatchStatus } from "./types";
 
 export function useLibrary(status?: WatchStatus) {
   return useQuery({
@@ -22,10 +22,45 @@ function useInvalidateLibrary() {
 }
 
 export function useSaveAnime() {
-  const invalidateLibrary = useInvalidateLibrary();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: saveAnime,
-    onSuccess: invalidateLibrary,
+    onMutate: async (args) => {
+      await queryClient.cancelQueries({ queryKey: ["library"] });
+      const previous = queryClient.getQueriesData<TrackedAnime[]>({
+        queryKey: ["library"],
+      });
+      const optimistic: TrackedAnime = {
+        anilist_id: args.anilistId,
+        title: args.title,
+        cover_image_path: "",
+        episode_count: args.episodeCount,
+        season: args.season,
+        year: args.year,
+        format: args.format,
+        status: args.status,
+        episodes_seen: args.episodesSeen,
+        saved_at: "",
+      };
+      const seed = (old: TrackedAnime[] | undefined) =>
+        old
+          ? [
+              ...old.filter((anime) => anime.anilist_id !== args.anilistId),
+              optimistic,
+            ]
+          : old;
+      queryClient.setQueryData(["library", "all"], seed);
+      queryClient.setQueryData(["library", args.status], seed);
+      return { previous };
+    },
+    onError: (_error, _args, context) => {
+      context?.previous.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
   });
 }
 
