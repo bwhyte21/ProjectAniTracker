@@ -1,12 +1,13 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { ArrowLeft, Minus, Plus } from "lucide-react";
-import type { ReactNode } from "react";
 import { AnimeCard } from "@/components/anime/AnimeCard";
+import { AnimeInfoCard } from "@/components/anime/AnimeInfoCard";
 import { CoverImage } from "@/components/anime/CoverImage";
 import { OfflineNotice, OfflineState } from "@/components/anime/OfflineState";
 import { RouteError } from "@/components/RouteError";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,15 +82,6 @@ export function synopsisText(description: string): string {
     .trim();
 }
 
-function InfoRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs font-medium text-muted-foreground uppercase">{label}</span>
-      <span className="text-sm">{value}</span>
-    </div>
-  );
-}
-
 function AnimeDetailPage() {
   const { id } = Route.useParams();
   const router = useRouter();
@@ -157,27 +149,16 @@ function AnimeDetail({ animeId }: { animeId: number }) {
             className="aspect-2/3 w-full rounded-xl object-cover"
           />
           <TrackingControls detail={detail} tracked={tracked} libraryPending={libraryIsPending} />
-          <div className="flex flex-col gap-3">
-            <InfoRow label="Type" value={detail.format ? FORMAT_LABELS[detail.format] : "-"} />
-            <InfoRow label="Episodes" value={detail.episodes ?? "TBA"} />
-            <InfoRow label="Status" value={detail.status ? humanizeEnum(detail.status) : "-"} />
-            <InfoRow label="Season" value={seasonText ?? "-"} />
-            <InfoRow label="Studios" value={studios || "-"} />
-            <InfoRow label="Source" value={detail.source ? humanizeEnum(detail.source) : "-"} />
-            <InfoRow label="Score" value={detail.averageScore ?? "-"} />
-            {genres.length > 0 && (
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground uppercase">Genres</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {genres.map((genre) => (
-                    <span key={genre} className="rounded-md bg-muted px-2 py-0.5 text-xs">
-                      {genre}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <AnimeInfoCard
+            type={detail.format ? FORMAT_LABELS[detail.format] : "-"}
+            episodes={detail.episodes ?? "TBA"}
+            status={detail.status ? humanizeEnum(detail.status) : "-"}
+            season={seasonText ?? "-"}
+            studios={studios || "-"}
+            source={detail.source ? humanizeEnum(detail.source) : "-"}
+            score={detail.averageScore ?? "-"}
+            genres={genres}
+          />
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-6">
           <div className="flex flex-col gap-1">
@@ -190,12 +171,14 @@ function AnimeDetail({ animeId }: { animeId: number }) {
             )}
           </div>
           {detail.description && (
-            <section className="flex flex-col gap-2">
-              <h2 className="text-lg font-bold">Synopsis</h2>
-              <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-                {synopsisText(detail.description)}
-              </p>
-            </section>
+            <Card>
+              <CardContent className="flex flex-col gap-2">
+                <h2 className="text-lg font-bold">Synopsis</h2>
+                <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
+                  {synopsisText(detail.description)}
+                </p>
+              </CardContent>
+            </Card>
           )}
           {related.length > 0 && (
             <section className="flex flex-col gap-3">
@@ -232,18 +215,15 @@ function TrackedAnimeDetail({ tracked, onRetry }: { tracked: TrackedAnime; onRet
             className="aspect-2/3 w-full rounded-xl object-cover"
           />
           <TrackingControls detail={null} tracked={tracked} libraryPending={false} />
-          <div className="flex flex-col gap-3">
-            <InfoRow
-              label="Type"
-              value={
-                tracked.format
-                  ? (FORMAT_LABELS[tracked.format as MediaFormat] ?? tracked.format)
-                  : "-"
-              }
-            />
-            <InfoRow label="Episodes" value={tracked.episode_count ?? "TBA"} />
-            <InfoRow label="Season" value={seasonText ?? "-"} />
-          </div>
+          <AnimeInfoCard
+            type={
+              tracked.format
+                ? (FORMAT_LABELS[tracked.format as MediaFormat] ?? tracked.format)
+                : "-"
+            }
+            episodes={tracked.episode_count ?? "TBA"}
+            season={seasonText ?? "-"}
+          />
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h1 className="text-3xl font-bold">{tracked.title}</h1>
