@@ -10,6 +10,16 @@ export class AniListError extends Error {
   }
 }
 
+// Transient connectivity only: fetch rejections and timeouts. The query
+// hooks auto-retry exactly this type; deterministic GraphQL/data errors
+// (and the offline guard in fetchAniList) surface without retry delays.
+export class AniListNetworkError extends AniListError {
+  constructor(message: string) {
+    super(message);
+    this.name = "AniListNetworkError";
+  }
+}
+
 export class AniListRateLimitError extends AniListError {
   readonly retryAfterSeconds: number;
 
@@ -85,7 +95,7 @@ async function fetchAniList<T>(query: string, variables: Record<string, unknown>
       timeoutAfter(REQUEST_TIMEOUT_MS),
     ]);
   } catch {
-    throw new AniListError("Could not reach AniList. Check your network connection.");
+    throw new AniListNetworkError("Could not reach AniList. Check your network connection.");
   }
 
   if (response.status === 429) {
