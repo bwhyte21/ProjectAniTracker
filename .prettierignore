@@ -3,3 +3,5 @@ dist/
 src-tauri/target/
 src-tauri/gen/
 package-lock.json
+playwright-report/
+test-results/

@@ -54,7 +54,7 @@ const FORMAT_LABELS: Record<MediaFormat, string> = {
   MUSIC: "Music",
 };
 
-function parseAnimeId(param: string): number | null {
+export function parseAnimeId(param: string): number | null {
   const id = Number(param);
   return Number.isInteger(id) && id > 0 ? id : null;
 }
@@ -66,7 +66,7 @@ function humanizeEnum(value: string): string {
     .join(" ");
 }
 
-function synopsisText(description: string): string {
+export function synopsisText(description: string): string {
   return description
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n\n")
