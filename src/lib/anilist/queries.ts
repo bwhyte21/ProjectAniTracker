@@ -110,6 +110,7 @@ const ANIME_DETAIL_DOCUMENT = `
                 large
               }
               format
+              episodes
             }
           }
         }
@@ -329,7 +330,7 @@ export function relatedAnime(detail: AnimeDetailMedia): AniListMedia[] {
       id: node.id,
       title: node.title,
       coverImage: node.coverImage,
-      episodes: null,
+      episodes: node.episodes,
       season: null,
       seasonYear: null,
       averageScore: null,
