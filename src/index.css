@@ -148,3 +148,9 @@
     animation: none;
   }
 }
+
+/* Error toasts (sonner) keep the themed chrome from the Toaster's token
+   overrides; only the icon carries the destructive signal (ADR-0010). */
+[data-sonner-toast][data-type="error"] [data-icon] {
+  color: var(--destructive);
+}

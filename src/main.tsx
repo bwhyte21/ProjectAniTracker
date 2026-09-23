@@ -1,7 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
+import { reportError } from "./lib/errors";
 import "./index.css";
 
 // networkMode "always": the default "online" pauses all queries and
@@ -13,6 +14,14 @@ const queryClient = new QueryClient({
     queries: { networkMode: "always" },
     mutations: { networkMode: "always" },
   },
+  // Central error surfacing (ADR-0010): every failed query and mutation
+  // toasts and appends to the log file, so no hook duplicates the plumbing.
+  queryCache: new QueryCache({
+    onError: (error) => reportError(error),
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => reportError(error),
+  }),
 });
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

@@ -8,6 +8,15 @@ use tauri_plugin_sql::{DbInstances, DbPool, Migration, MigrationKind};
 /// `sqlite:` databases relative to the OS app-config directory.
 pub const DB_URL: &str = "sqlite:anitracker.db";
 
+/// Formats an IPC error message and logs it (ADR-0010): every `map_err`
+/// failure site funnels through here so the log file and the error string
+/// returned to the frontend stay in sync.
+fn logged_error(context: &str, e: impl std::fmt::Display) -> String {
+    let message = format!("{context}: {e}");
+    log::error!("{message}");
+    message
+}
+
 pub fn migrations() -> Vec<Migration> {
     vec![Migration {
         version: 1,
@@ -71,10 +80,10 @@ async fn download_cover(app: &AppHandle, anilist_id: i64, url: &str) -> Result<S
     let covers_dir = app
         .path()
         .app_data_dir()
-        .map_err(|e| format!("failed to resolve app-data directory: {e}"))?
+        .map_err(|e| logged_error("failed to resolve app-data directory", e))?
         .join("covers");
     std::fs::create_dir_all(&covers_dir)
-        .map_err(|e| format!("failed to create covers directory: {e}"))?;
+        .map_err(|e| logged_error("failed to create covers directory", e))?;
 
     let url_path = url.split(['?', '#']).next().unwrap_or(url);
     let extension = std::path::Path::new(url_path)
@@ -86,13 +95,14 @@ async fn download_cover(app: &AppHandle, anilist_id: i64, url: &str) -> Result<S
     let response = reqwest::get(url)
         .await
         .and_then(|r| r.error_for_status())
-        .map_err(|e| format!("failed to download cover image: {e}"))?;
+        .map_err(|e| logged_error("failed to download cover image", e))?;
     let bytes = response
         .bytes()
         .await
-        .map_err(|e| format!("failed to read cover image: {e}"))?;
+        .map_err(|e| logged_error("failed to read cover image", e))?;
 
-    std::fs::write(&file_path, &bytes).map_err(|e| format!("failed to write cover image: {e}"))?;
+    std::fs::write(&file_path, &bytes)
+        .map_err(|e| logged_error("failed to write cover image", e))?;
     Ok(file_path.to_string_lossy().into_owned())
 }
 
@@ -129,7 +139,7 @@ pub async fn save_anime(
     .bind(episodes_seen.unwrap_or(0))
     .execute(&pool)
     .await
-    .map_err(|e| format!("failed to save anime: {e}"))?;
+    .map_err(|e| logged_error("failed to save anime", e))?;
 
     Ok(cover_image_path)
 }
@@ -146,7 +156,7 @@ pub async fn update_watch_status(
         .bind(anilist_id)
         .execute(&pool)
         .await
-        .map_err(|e| format!("failed to update watch status: {e}"))?;
+        .map_err(|e| logged_error("failed to update watch status", e))?;
 
     if result.rows_affected() == 0 {
         return Err(format!("no tracked anime with anilist_id {anilist_id}"));
@@ -166,7 +176,7 @@ pub async fn update_episodes_seen(
         .bind(anilist_id)
         .execute(&pool)
         .await
-        .map_err(|e| format!("failed to update episodes seen: {e}"))?;
+        .map_err(|e| logged_error("failed to update episodes seen", e))?;
 
     if result.rows_affected() == 0 {
         return Err(format!("no tracked anime with anilist_id {anilist_id}"));
@@ -183,14 +193,14 @@ pub async fn delete_anime(app: AppHandle, anilist_id: i64) -> Result<(), String>
             .bind(anilist_id)
             .fetch_optional(&pool)
             .await
-            .map_err(|e| format!("failed to look up anime: {e}"))?
+            .map_err(|e| logged_error("failed to look up anime", e))?
             .map(|row| row.get("cover_image_path"));
 
     let result = sqlx::query("DELETE FROM tracked_anime WHERE anilist_id = ?")
         .bind(anilist_id)
         .execute(&pool)
         .await
-        .map_err(|e| format!("failed to delete anime: {e}"))?;
+        .map_err(|e| logged_error("failed to delete anime", e))?;
 
     if result.rows_affected() == 0 {
         return Err(format!("no tracked anime with anilist_id {anilist_id}"));
@@ -207,7 +217,7 @@ pub async fn get_library(app: AppHandle) -> Result<Vec<TrackedAnime>, String> {
     let rows = sqlx::query("SELECT * FROM tracked_anime ORDER BY saved_at DESC, anilist_id DESC")
         .fetch_all(&pool)
         .await
-        .map_err(|e| format!("failed to load library: {e}"))?;
+        .map_err(|e| logged_error("failed to load library", e))?;
 
     Ok(rows.iter().map(row_to_tracked_anime).collect())
 }
@@ -224,7 +234,7 @@ pub async fn get_library_by_status(
     .bind(&status)
     .fetch_all(&pool)
     .await
-    .map_err(|e| format!("failed to load library: {e}"))?;
+    .map_err(|e| logged_error("failed to load library", e))?;
 
     Ok(rows.iter().map(row_to_tracked_anime).collect())
 }

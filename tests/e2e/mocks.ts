@@ -42,7 +42,10 @@ interface MockLibraryRow {
 // no imports, no closures over Node-side values. State lives on window, which
 // persists across client-side SPA navigations within one page.
 function ipcHandler(cmd: string, payload: IpcPayload | undefined): unknown {
-  const w = window as typeof window & { __E2E_LIBRARY?: MockLibraryRow[] };
+  const w = window as typeof window & {
+    __E2E_LIBRARY?: MockLibraryRow[];
+    __E2E_FAIL_SAVE?: boolean;
+  };
   const db = (w.__E2E_LIBRARY ??= []);
   switch (cmd) {
     case "get_library":
@@ -50,6 +53,10 @@ function ipcHandler(cmd: string, payload: IpcPayload | undefined): unknown {
     case "get_library_by_status":
       return db.filter((row) => row.status === payload?.status);
     case "save_anime": {
+      // Tests set this flag to exercise the error-toast path (Phase 20).
+      if (w.__E2E_FAIL_SAVE) {
+        throw new Error("mock save failed");
+      }
       const row: MockLibraryRow = {
         anilist_id: payload?.anilistId ?? 0,
         title: payload?.title ?? "",
@@ -93,6 +100,11 @@ function ipcHandler(cmd: string, payload: IpcPayload | undefined): unknown {
     }
     case "get_build_info":
       return { version: "0.1.0", git_commit: "e2e-mock", platform: "linux" };
+    // The app logs surfaced errors through tauri-plugin-log's JS bindings
+    // (Phase 20); accept the command so the browser build's log calls
+    // resolve instead of rejecting into their silent catch.
+    case "plugin:log|log":
+      return null;
     default:
       throw new Error(`unexpected IPC command: ${cmd}`);
   }
@@ -104,10 +116,12 @@ function ipcHandler(cmd: string, payload: IpcPayload | undefined): unknown {
 function mockInternals(): void {
   const w = window as typeof window & {
     __TAURI_INTERNALS__?: Record<string, unknown>;
-    __TAURI_EVENT_PLUGIN_INTERNALS__?: Record<string, unknown>;
+    __TAURI_EVENT_PLUGIN_INTERNALS__?: { unregisterListener: () => void };
   };
   w.__TAURI_INTERNALS__ ??= {};
-  w.__TAURI_EVENT_PLUGIN_INTERNALS__ ??= {};
+  // @tauri-apps/api 2.11 declares this with a required unregisterListener;
+  // mockIPC replaces the seed with its own implementation right after.
+  w.__TAURI_EVENT_PLUGIN_INTERNALS__ ??= { unregisterListener: () => {} };
 }
 
 // mockIPC and mockConvertFileSrc only touch `window`, so their sources can be
