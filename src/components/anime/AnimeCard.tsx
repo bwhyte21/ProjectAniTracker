@@ -1,11 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { CoverImage } from "@/components/anime/CoverImage";
 import { Card } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { AniListMedia } from "@/lib/anilist/types";
 
 interface AnimeCardProps {
@@ -35,9 +31,7 @@ export function AnimeCard({ media }: AnimeCardProps) {
               className="aspect-[2/3] w-full object-cover"
             />
             <div className="flex flex-col gap-1 px-3 py-3">
-              <h3 className="line-clamp-2 text-sm leading-snug font-medium">
-                {title}
-              </h3>
+              <h3 className="line-clamp-2 text-sm leading-snug font-medium">{title}</h3>
               <p className="text-xs text-muted-foreground">
                 {media.episodes ? `${media.episodes} episodes` : "Episodes TBA"}
               </p>

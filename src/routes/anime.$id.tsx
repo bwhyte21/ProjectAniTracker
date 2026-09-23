@@ -84,9 +84,7 @@ function synopsisText(description: string): string {
 function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-xs font-medium text-muted-foreground uppercase">
-        {label}
-      </span>
+      <span className="text-xs font-medium text-muted-foreground uppercase">{label}</span>
       <span className="text-sm">{value}</span>
     </div>
   );
@@ -110,11 +108,7 @@ function AnimeDetailPage() {
     <>
       {router.history.canGoBack() && (
         <div className="px-8 pt-8">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.history.back()}
-          >
+          <Button variant="outline" size="sm" onClick={() => router.history.back()}>
             <ArrowLeft /> Back
           </Button>
         </div>
@@ -125,16 +119,9 @@ function AnimeDetailPage() {
 }
 
 function AnimeDetail({ animeId }: { animeId: number }) {
-  const {
-    data: detail,
-    error,
-    isPending,
-    isError,
-    refetch,
-  } = useAnimeById(animeId);
+  const { data: detail, error, isPending, isError, refetch } = useAnimeById(animeId);
   const { data: library, isPending: libraryIsPending } = useLibrary();
-  const tracked =
-    library?.find((anime) => anime.anilist_id === animeId) ?? null;
+  const tracked = library?.find((anime) => anime.anilist_id === animeId) ?? null;
 
   if (isPending || (isError && libraryIsPending)) {
     return (
@@ -155,16 +142,9 @@ function AnimeDetail({ animeId }: { animeId: number }) {
 
   const related = relatedAnime(detail);
   const title = detail.title.english ?? detail.title.romaji ?? "Unknown title";
-  const { season, seasonYear } = deriveSeason(
-    detail.startDate,
-    detail.season,
-    detail.seasonYear,
-  );
-  const seasonText =
-    season && seasonYear ? `${SEASON_LABELS[season]} ${seasonYear}` : null;
-  const studios = (detail.studios?.nodes ?? [])
-    .map((studio) => studio.name)
-    .join(", ");
+  const { season, seasonYear } = deriveSeason(detail.startDate, detail.season, detail.seasonYear);
+  const seasonText = season && seasonYear ? `${SEASON_LABELS[season]} ${seasonYear}` : null;
+  const studios = (detail.studios?.nodes ?? []).map((studio) => studio.name).join(", ");
   const genres = detail.genres ?? [];
 
   return (
@@ -176,39 +156,21 @@ function AnimeDetail({ animeId }: { animeId: number }) {
             alt={`Cover image for ${title}`}
             className="aspect-2/3 w-full rounded-xl object-cover"
           />
-          <TrackingControls
-            detail={detail}
-            tracked={tracked}
-            libraryPending={libraryIsPending}
-          />
+          <TrackingControls detail={detail} tracked={tracked} libraryPending={libraryIsPending} />
           <div className="flex flex-col gap-3">
-            <InfoRow
-              label="Type"
-              value={detail.format ? FORMAT_LABELS[detail.format] : "-"}
-            />
+            <InfoRow label="Type" value={detail.format ? FORMAT_LABELS[detail.format] : "-"} />
             <InfoRow label="Episodes" value={detail.episodes ?? "TBA"} />
-            <InfoRow
-              label="Status"
-              value={detail.status ? humanizeEnum(detail.status) : "-"}
-            />
+            <InfoRow label="Status" value={detail.status ? humanizeEnum(detail.status) : "-"} />
             <InfoRow label="Season" value={seasonText ?? "-"} />
             <InfoRow label="Studios" value={studios || "-"} />
-            <InfoRow
-              label="Source"
-              value={detail.source ? humanizeEnum(detail.source) : "-"}
-            />
+            <InfoRow label="Source" value={detail.source ? humanizeEnum(detail.source) : "-"} />
             <InfoRow label="Score" value={detail.averageScore ?? "-"} />
             {genres.length > 0 && (
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground uppercase">
-                  Genres
-                </span>
+                <span className="text-xs font-medium text-muted-foreground uppercase">Genres</span>
                 <div className="flex flex-wrap gap-1.5">
                   {genres.map((genre) => (
-                    <span
-                      key={genre}
-                      className="rounded-md bg-muted px-2 py-0.5 text-xs"
-                    >
+                    <span key={genre} className="rounded-md bg-muted px-2 py-0.5 text-xs">
                       {genre}
                     </span>
                   ))}
@@ -219,19 +181,12 @@ function AnimeDetail({ animeId }: { animeId: number }) {
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-6">
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-bold">
-              {detail.title.romaji ?? title}
-            </h1>
-            {detail.title.english &&
-              detail.title.english !== detail.title.romaji && (
-                <p className="text-lg text-muted-foreground">
-                  {detail.title.english}
-                </p>
-              )}
+            <h1 className="text-3xl font-bold">{detail.title.romaji ?? title}</h1>
+            {detail.title.english && detail.title.english !== detail.title.romaji && (
+              <p className="text-lg text-muted-foreground">{detail.title.english}</p>
+            )}
             {detail.title.native && (
-              <p className="text-sm text-muted-foreground">
-                {detail.title.native}
-              </p>
+              <p className="text-sm text-muted-foreground">{detail.title.native}</p>
             )}
           </div>
           {detail.description && (
@@ -258,13 +213,7 @@ function AnimeDetail({ animeId }: { animeId: number }) {
   );
 }
 
-function TrackedAnimeDetail({
-  tracked,
-  onRetry,
-}: {
-  tracked: TrackedAnime;
-  onRetry: () => void;
-}) {
+function TrackedAnimeDetail({ tracked, onRetry }: { tracked: TrackedAnime; onRetry: () => void }) {
   const seasonText =
     tracked.season || tracked.year
       ? [tracked.season ? humanizeEnum(tracked.season) : null, tracked.year]
@@ -282,18 +231,13 @@ function TrackedAnimeDetail({
             alt={`Cover image for ${tracked.title}`}
             className="aspect-2/3 w-full rounded-xl object-cover"
           />
-          <TrackingControls
-            detail={null}
-            tracked={tracked}
-            libraryPending={false}
-          />
+          <TrackingControls detail={null} tracked={tracked} libraryPending={false} />
           <div className="flex flex-col gap-3">
             <InfoRow
               label="Type"
               value={
                 tracked.format
-                  ? (FORMAT_LABELS[tracked.format as MediaFormat] ??
-                    tracked.format)
+                  ? (FORMAT_LABELS[tracked.format as MediaFormat] ?? tracked.format)
                   : "-"
               }
             />
@@ -330,18 +274,13 @@ function TrackingControls({
     deleteAnimeMutation.error;
 
   const cover = detail?.coverImage?.large ?? "";
-  const title =
-    detail?.title.english ?? detail?.title.romaji ?? "Unknown title";
+  const title = detail?.title.english ?? detail?.title.romaji ?? "Unknown title";
 
   function handleSave(status: WatchStatus) {
     if (!detail) {
       return;
     }
-    const { season, seasonYear } = deriveSeason(
-      detail.startDate,
-      detail.season,
-      detail.seasonYear,
-    );
+    const { season, seasonYear } = deriveSeason(detail.startDate, detail.season, detail.seasonYear);
     saveAnimeMutation.mutate({
       anilistId: detail.id,
       title,
@@ -351,10 +290,7 @@ function TrackingControls({
       year: seasonYear,
       format: detail.format,
       status,
-      episodesSeen:
-        status === "completed" && detail.episodes !== null
-          ? detail.episodes
-          : 0,
+      episodesSeen: status === "completed" && detail.episodes !== null ? detail.episodes : 0,
     });
   }
 
@@ -364,16 +300,11 @@ function TrackingControls({
         detail ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button disabled={!cover || libraryPending}>
-                Add to Library
-              </Button>
+              <Button disabled={!cover || libraryPending}>Add to Library</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               {WATCH_STATUSES.map((status) => (
-                <DropdownMenuItem
-                  key={status}
-                  onClick={() => handleSave(status)}
-                >
+                <DropdownMenuItem key={status} onClick={() => handleSave(status)}>
                   {WATCH_STATUS_LABELS[status]}
                 </DropdownMenuItem>
               ))}
@@ -427,10 +358,7 @@ function TrackingControls({
                 variant="outline"
                 size="icon-sm"
                 aria-label="Decrease episodes seen"
-                disabled={
-                  tracked.episodes_seen <= 0 ||
-                  updateEpisodesSeenMutation.isPending
-                }
+                disabled={tracked.episodes_seen <= 0 || updateEpisodesSeenMutation.isPending}
                 onClick={() =>
                   updateEpisodesSeenMutation.mutate({
                     anilistId: tracked.anilist_id,
@@ -442,9 +370,7 @@ function TrackingControls({
               </Button>
               <span className="min-w-16 text-center text-sm">
                 {tracked.episodes_seen}
-                {tracked.episode_count !== null
-                  ? ` / ${tracked.episode_count}`
-                  : ""}
+                {tracked.episode_count !== null ? ` / ${tracked.episode_count}` : ""}
               </span>
               <Button
                 variant="outline"
@@ -475,9 +401,7 @@ function TrackingControls({
           </Button>
         </>
       )}
-      {mutationError && (
-        <p className="text-sm text-destructive">{mutationError.message}</p>
-      )}
+      {mutationError && <p className="text-sm text-destructive">{mutationError.message}</p>}
     </div>
   );
 }

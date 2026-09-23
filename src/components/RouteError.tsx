@@ -1,6 +1,5 @@
 export function RouteError({ error }: { error: unknown }) {
-  const message =
-    error instanceof Error ? error.message : "An unexpected error occurred.";
+  const message = error instanceof Error ? error.message : "An unexpected error occurred.";
 
   return (
     <div className="p-8">

@@ -167,10 +167,7 @@ function TopPage() {
               <TableRow>
                 {table.getFlatHeaders().map((header) => (
                   <TableHead key={header.id}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
+                    {flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -180,10 +177,7 @@ function TopPage() {
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -192,8 +186,7 @@ function TopPage() {
           </Table>
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
+              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
             </p>
             <Pagination className="mx-0 w-auto justify-end">
               <PaginationContent>
@@ -201,10 +194,7 @@ function TopPage() {
                   <PaginationPrevious
                     onClick={() => table.previousPage()}
                     aria-disabled={!table.getCanPreviousPage()}
-                    className={cn(
-                      !table.getCanPreviousPage() &&
-                        "pointer-events-none opacity-50",
-                    )}
+                    className={cn(!table.getCanPreviousPage() && "pointer-events-none opacity-50")}
                   />
                 </PaginationItem>
                 {Array.from({ length: table.getPageCount() }, (_, index) => (
@@ -221,10 +211,7 @@ function TopPage() {
                   <PaginationNext
                     onClick={() => table.nextPage()}
                     aria-disabled={!table.getCanNextPage()}
-                    className={cn(
-                      !table.getCanNextPage() &&
-                        "pointer-events-none opacity-50",
-                    )}
+                    className={cn(!table.getCanNextPage() && "pointer-events-none opacity-50")}
                   />
                 </PaginationItem>
               </PaginationContent>

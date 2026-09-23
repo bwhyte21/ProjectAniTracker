@@ -19,11 +19,7 @@ interface AnimeCarouselProps {
   query: UseQueryResult<AniListMedia[], Error>;
 }
 
-export function AnimeCarousel({
-  title,
-  viewMoreTo,
-  query,
-}: AnimeCarouselProps) {
+export function AnimeCarousel({ title, viewMoreTo, query }: AnimeCarouselProps) {
   const { data, error, isPending, isError } = query;
 
   return (

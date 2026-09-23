@@ -3,11 +3,7 @@ import { Info } from "lucide-react";
 import { AnimeGrid } from "@/components/anime/AnimeGrid";
 import { OfflineState } from "@/components/anime/OfflineState";
 import { RouteError } from "@/components/RouteError";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSeasonalPopularAnime } from "@/lib/anilist/hooks";
 import { SEASON_LABELS, getCurrentSeason } from "@/lib/anilist/season";
 
@@ -17,8 +13,7 @@ export const Route = createFileRoute("/season")({
 });
 
 function SeasonPage() {
-  const { data, error, isPending, isError, refetch } =
-    useSeasonalPopularAnime();
+  const { data, error, isPending, isError, refetch } = useSeasonalPopularAnime();
   const { season, seasonYear } = getCurrentSeason();
 
   return (
@@ -36,16 +31,12 @@ function SeasonPage() {
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            The season currently airing. The winter block starts in December, so
-            it carries the next year's label.
+            The season currently airing. The winter block starts in December, so it carries the next
+            year's label.
           </TooltipContent>
         </Tooltip>
       </h1>
-      {isPending && (
-        <p className="text-sm text-muted-foreground">
-          Loading seasonal anime...
-        </p>
-      )}
+      {isPending && <p className="text-sm text-muted-foreground">Loading seasonal anime...</p>}
       {isError && <OfflineState error={error} onRetry={refetch} />}
       {data && data.length === 0 && (
         <p className="text-sm text-muted-foreground">No anime found.</p>

@@ -1,12 +1,7 @@
 import { AniListError, anilistRequest } from "./client";
 import { getMatureContent } from "@/lib/mature-content";
 import { getCurrentSeason } from "./season";
-import type {
-  AniListMedia,
-  AnimeDetailMedia,
-  MediaRelationType,
-  MediaSeason,
-} from "./types";
+import type { AniListMedia, AnimeDetailMedia, MediaRelationType, MediaSeason } from "./types";
 
 const MAX_SEARCH_LENGTH = 200;
 
@@ -202,9 +197,7 @@ export async function searchAnime(
   const trimmed = filters.search.trim().slice(0, MAX_SEARCH_LENGTH);
   const hasText = trimmed.length > 0;
   const hasFilters =
-    filters.genre !== undefined ||
-    filters.season !== undefined ||
-    filters.seasonYear !== undefined;
+    filters.genre !== undefined || filters.season !== undefined || filters.seasonYear !== undefined;
   if (!hasText && !hasFilters) {
     throw new AniListError("Search query must not be empty.");
   }
@@ -275,10 +268,7 @@ export async function genreCollection(): Promise<string[]> {
     throw new AniListError("AniList returned an unexpected response shape.");
   }
   const genres = (data as Record<string, unknown>).GenreCollection;
-  if (
-    !Array.isArray(genres) ||
-    genres.some((genre) => typeof genre !== "string")
-  ) {
+  if (!Array.isArray(genres) || genres.some((genre) => typeof genre !== "string")) {
     throw new AniListError("AniList returned an unexpected response shape.");
   }
   const list = genres as string[];
@@ -286,18 +276,16 @@ export async function genreCollection(): Promise<string[]> {
 }
 
 export async function trendingAnime(): Promise<AniListMedia[]> {
-  const data = await anilistRequest<unknown>(
-    trendingAnimeDocument(isAdultArg()),
-  );
+  const data = await anilistRequest<unknown>(trendingAnimeDocument(isAdultArg()));
   return extractMedia(data);
 }
 
 export async function seasonalPopularAnime(): Promise<AniListMedia[]> {
   const { season, seasonYear } = getCurrentSeason();
-  const data = await anilistRequest<unknown>(
-    seasonalPopularAnimeDocument(isAdultArg()),
-    { season, seasonYear },
-  );
+  const data = await anilistRequest<unknown>(seasonalPopularAnimeDocument(isAdultArg()), {
+    season,
+    seasonYear,
+  });
   return extractMedia(data);
 }
 

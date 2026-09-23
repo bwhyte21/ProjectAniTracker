@@ -2,13 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Heart } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
@@ -41,31 +35,20 @@ function AboutPage() {
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle>AniTracker</CardTitle>
-          <CardDescription>
-            Local anime tracker powered by Tauri and AniList.
-          </CardDescription>
+          <CardDescription>Local anime tracker powered by Tauri and AniList.</CardDescription>
         </CardHeader>
         <CardContent>
           {buildInfo ? (
             <div className="flex flex-col gap-2">
               {rows.map((row) => (
-                <div
-                  key={row.label}
-                  className="flex items-center justify-between gap-4"
-                >
-                  <span className="text-sm text-muted-foreground">
-                    {row.label}
-                  </span>
-                  <span className="text-sm font-medium break-all">
-                    {row.value}
-                  </span>
+                <div key={row.label} className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-muted-foreground">{row.label}</span>
+                  <span className="text-sm font-medium break-all">{row.value}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Loading build info...
-            </p>
+            <p className="text-sm text-muted-foreground">Loading build info...</p>
           )}
         </CardContent>
       </Card>
