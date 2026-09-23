@@ -79,6 +79,7 @@ export interface RelatedMedia {
   title: MediaTitle;
   coverImage: MediaCoverImage | null;
   format: MediaFormat | null;
+  episodes: number | null;
 }
 
 export interface RelatedMediaEdge {
