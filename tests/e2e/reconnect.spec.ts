@@ -43,7 +43,10 @@ test("a killed in-flight request recovers on window focus without a reload", asy
   await page.unroute(ANILIST_ENDPOINT);
   await installAniListMock(page);
   // A network swap never fires offline/online, so recovery rides on the
-  // focus listener (visibilitychange in TanStack's focusManager).
+  // focus path. The browser build exercises TanStack's own
+  // visibilitychange listener here; in the real webview, where
+  // visibilitychange never fires on focus changes, the bridge in
+  // src/lib/focus.ts feeds the same focusManager from native events.
   await page.evaluate(() => window.dispatchEvent(new Event("visibilitychange")));
   await expect(page.getByRole("link", { name: /Cowboy Bebop/ })).toBeVisible();
 });
