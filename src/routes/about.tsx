@@ -61,6 +61,13 @@ function AboutPage() {
         />{" "}
         using Rust & TypeScript
       </p>
+      {import.meta.env.DEV && (
+        <p className="max-w-md text-sm text-muted-foreground">
+          Dev build: a network change (toggling a VPN) while the app is running can drop the
+          webview's connection to the Vite dev server, and it does not recover on its own. Restart
+          npm run tauri dev to reconnect.
+        </p>
+      )}
     </div>
   );
 }
