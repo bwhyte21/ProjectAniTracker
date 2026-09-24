@@ -20,11 +20,14 @@ export default defineConfig(() => ({
   //
   // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
+  // 2. tauri expects a fixed port, fail if that port is not available.
+  // Bind the IPv4 loopback literal (matching devUrl in tauri.conf.json):
+  // "localhost" can resolve to ::1, and VPN clients that disturb IPv6
+  // wedge the webview's dev-server connection until an app restart.
   server: {
     port: 1420,
     strictPort: true,
-    host: host || false,
+    host: host || "127.0.0.1",
     hmr: host
       ? {
           protocol: "ws",

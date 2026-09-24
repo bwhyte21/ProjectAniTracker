@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { reportError } from "./lib/errors";
+import { bridgeWebviewFocus } from "./lib/focus";
 import "./index.css";
 
 // networkMode "always": the default "online" pauses all queries and
@@ -23,6 +24,8 @@ const queryClient = new QueryClient({
     onError: (error) => reportError(error),
   }),
 });
+
+bridgeWebviewFocus();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

@@ -8,7 +8,9 @@ test.beforeEach(async ({ page }) => {
 test("browse pages show the offline state when AniList is unreachable", async ({ page }) => {
   await abortAniList(page);
   await page.goto("/search?q=Frieren");
-  await expect(page.getByText("No connection").first()).toBeVisible();
+  // Both search-page queries burn their two retries through the client's
+  // paced request queue before giving up, so the offline state arrives late.
+  await expect(page.getByText("No connection").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
 });
 

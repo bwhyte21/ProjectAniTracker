@@ -1,5 +1,5 @@
 import { mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
-import type { Page } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
 import {
   frierenDetail,
   genreCollection,
@@ -9,7 +9,7 @@ import {
   trendingMedia,
 } from "./fixtures";
 
-const ANILIST_ENDPOINT = "https://graphql.anilist.co";
+export const ANILIST_ENDPOINT = "https://graphql.anilist.co";
 
 // Payloads arrive in camelCase exactly as the frontend sends them (Tauri's
 // real arg conversion never runs in the browser build).
@@ -136,41 +136,74 @@ export async function installIpcMock(page: Page): Promise<void> {
   await page.addInitScript(script);
 }
 
-// Serves every AniList GraphQL operation from typed fixtures via route
-// interception, keyed on the operation name embedded in the query text.
-export async function installAniListMock(page: Page): Promise<void> {
-  await page.route(ANILIST_ENDPOINT, (route) => {
-    const body = JSON.parse(route.request().postData() ?? "{}") as { query?: string };
-    const query = body.query ?? "";
-    let data: Record<string, unknown>;
-    if (query.includes("SearchAnime")) {
-      data = { Page: { pageInfo: { hasNextPage: false }, media: searchMedia } };
-    } else if (query.includes("GenreCollection")) {
-      data = { GenreCollection: genreCollection };
-    } else if (query.includes("TrendingAnime")) {
-      data = { Page: { media: trendingMedia } };
-    } else if (query.includes("SeasonalPopularAnime")) {
-      data = { Page: { media: seasonalMedia } };
-    } else if (query.includes("TopAnime")) {
-      data = { Page: { media: topMedia } };
-    } else if (query.includes("AnimeDetail")) {
-      data = { Media: frierenDetail };
-    } else {
-      return route.fulfill({
-        status: 400,
-        contentType: "application/json",
-        body: JSON.stringify({ errors: [{ message: `unexpected query: ${query.slice(0, 60)}` }] }),
-      });
-    }
+// Serves one AniList GraphQL operation from typed fixtures, keyed on the
+// operation name embedded in the query text.
+async function fulfillAniList(route: Route): Promise<void> {
+  const body = JSON.parse(route.request().postData() ?? "{}") as { query?: string };
+  const query = body.query ?? "";
+  let data: Record<string, unknown>;
+  if (query.includes("SearchAnime")) {
+    data = { Page: { pageInfo: { hasNextPage: false }, media: searchMedia } };
+  } else if (query.includes("GenreCollection")) {
+    data = { GenreCollection: genreCollection };
+  } else if (query.includes("TrendingAnime")) {
+    data = { Page: { media: trendingMedia } };
+  } else if (query.includes("SeasonalPopularAnime")) {
+    data = { Page: { media: seasonalMedia } };
+  } else if (query.includes("TopAnime")) {
+    data = { Page: { media: topMedia } };
+  } else if (query.includes("AnimeDetail")) {
+    data = { Media: frierenDetail };
+  } else {
     return route.fulfill({
-      status: 200,
+      status: 400,
       contentType: "application/json",
-      body: JSON.stringify({ data }),
+      body: JSON.stringify({ errors: [{ message: `unexpected query: ${query.slice(0, 60)}` }] }),
     });
+  }
+  return route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ data }),
   });
+}
+
+// Serves every AniList GraphQL operation from typed fixtures via route
+// interception.
+export async function installAniListMock(page: Page): Promise<void> {
+  await page.route(ANILIST_ENDPOINT, fulfillAniList);
 }
 
 // Simulates AniList being unreachable so the offline states render.
 export async function abortAniList(page: Page): Promise<void> {
   await page.route(ANILIST_ENDPOINT, (route) => route.abort());
+}
+
+// Simulates a transient connectivity blip (Phase 21): the first `failures`
+// requests abort like a dropped connection, then AniList serves fixtures
+// normally so the automatic retries recover without user action.
+export async function installFlakyAniList(page: Page, failures: number): Promise<void> {
+  let remaining = failures;
+  await page.route(ANILIST_ENDPOINT, async (route) => {
+    if (remaining > 0) {
+      remaining -= 1;
+      return route.abort();
+    }
+    return fulfillAniList(route);
+  });
+}
+
+// Serves a 429 with a Retry-After header; returns the number of requests
+// seen, so tests can prove rate-limit errors never auto-retry. Retry-After
+// must be CORS-exposed or the browser hides it from the app's fetch.
+export async function rateLimitAniList(page: Page): Promise<() => number> {
+  let requests = 0;
+  await page.route(ANILIST_ENDPOINT, (route) => {
+    requests += 1;
+    return route.fulfill({
+      status: 429,
+      headers: { "Retry-After": "30", "Access-Control-Expose-Headers": "Retry-After" },
+    });
+  });
+  return () => requests;
 }
