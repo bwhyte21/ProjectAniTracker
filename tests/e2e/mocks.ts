@@ -36,6 +36,7 @@ interface MockLibraryRow {
   status: string;
   episodes_seen: number;
   saved_at: string;
+  updated_at: string;
 }
 
 // Runs inside the browser via addInitScript, so it must stay self-contained:
@@ -68,6 +69,7 @@ function ipcHandler(cmd: string, payload: IpcPayload | undefined): unknown {
         status: payload?.status ?? "",
         episodes_seen: payload?.episodesSeen ?? 0,
         saved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
       const index = db.findIndex((existing) => existing.anilist_id === row.anilist_id);
       if (index === -1) {
@@ -81,6 +83,7 @@ function ipcHandler(cmd: string, payload: IpcPayload | undefined): unknown {
       const row = db.find((existing) => existing.anilist_id === payload?.anilistId);
       if (row && payload?.status) {
         row.status = payload.status;
+        row.updated_at = new Date().toISOString();
       }
       return null;
     }
@@ -88,6 +91,7 @@ function ipcHandler(cmd: string, payload: IpcPayload | undefined): unknown {
       const row = db.find((existing) => existing.anilist_id === payload?.anilistId);
       if (row) {
         row.episodes_seen = payload?.episodesSeen ?? 0;
+        row.updated_at = new Date().toISOString();
       }
       return null;
     }
