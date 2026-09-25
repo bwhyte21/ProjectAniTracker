@@ -31,4 +31,5 @@ export interface TrackedAnime {
   status: WatchStatus;
   episodes_seen: number;
   saved_at: string;
+  updated_at: string;
 }

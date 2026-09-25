@@ -18,10 +18,11 @@ fn logged_error(context: &str, e: impl std::fmt::Display) -> String {
 }
 
 pub fn migrations() -> Vec<Migration> {
-    vec![Migration {
-        version: 1,
-        description: "create tracked_anime table",
-        sql: "CREATE TABLE tracked_anime (
+    vec![
+        Migration {
+            version: 1,
+            description: "create tracked_anime table",
+            sql: "CREATE TABLE tracked_anime (
             anilist_id INTEGER PRIMARY KEY,
             title TEXT NOT NULL,
             cover_image_path TEXT NOT NULL,
@@ -33,8 +34,20 @@ pub fn migrations() -> Vec<Migration> {
             episodes_seen INTEGER NOT NULL DEFAULT 0,
             saved_at TEXT NOT NULL DEFAULT (datetime('now'))
         )",
-        kind: MigrationKind::Up,
-    }]
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "add updated_at column",
+            // SQLite forbids expression defaults in ALTER TABLE ADD COLUMN, so
+            // the column ships nullable and the backfill fills it: after the
+            // migration every row is non-null, in the pre-upgrade saved_at
+            // order (ADR-0011).
+            sql: "ALTER TABLE tracked_anime ADD COLUMN updated_at TEXT;
+            UPDATE tracked_anime SET updated_at = saved_at WHERE updated_at IS NULL;",
+            kind: MigrationKind::Up,
+        },
+    ]
 }
 
 #[derive(Debug, Serialize)]
@@ -49,6 +62,7 @@ pub struct TrackedAnime {
     pub status: String,
     pub episodes_seen: i64,
     pub saved_at: String,
+    pub updated_at: String,
 }
 
 fn row_to_tracked_anime(row: &sqlx::sqlite::SqliteRow) -> TrackedAnime {
@@ -63,6 +77,7 @@ fn row_to_tracked_anime(row: &sqlx::sqlite::SqliteRow) -> TrackedAnime {
         status: row.get("status"),
         episodes_seen: row.get("episodes_seen"),
         saved_at: row.get("saved_at"),
+        updated_at: row.get("updated_at"),
     }
 }
 
@@ -125,8 +140,8 @@ pub async fn save_anime(
     let pool = db_pool(&app).await?;
     sqlx::query(
         "INSERT INTO tracked_anime
-            (anilist_id, title, cover_image_path, episode_count, season, year, format, status, episodes_seen)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (anilist_id, title, cover_image_path, episode_count, season, year, format, status, episodes_seen, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
     )
     .bind(anilist_id)
     .bind(&title)
@@ -151,12 +166,14 @@ pub async fn update_watch_status(
     status: String,
 ) -> Result<(), String> {
     let pool = db_pool(&app).await?;
-    let result = sqlx::query("UPDATE tracked_anime SET status = ? WHERE anilist_id = ?")
-        .bind(&status)
-        .bind(anilist_id)
-        .execute(&pool)
-        .await
-        .map_err(|e| logged_error("failed to update watch status", e))?;
+    let result = sqlx::query(
+        "UPDATE tracked_anime SET status = ?, updated_at = datetime('now') WHERE anilist_id = ?",
+    )
+    .bind(&status)
+    .bind(anilist_id)
+    .execute(&pool)
+    .await
+    .map_err(|e| logged_error("failed to update watch status", e))?;
 
     if result.rows_affected() == 0 {
         return Err(format!("no tracked anime with anilist_id {anilist_id}"));
@@ -171,7 +188,8 @@ pub async fn update_episodes_seen(
     episodes_seen: i64,
 ) -> Result<(), String> {
     let pool = db_pool(&app).await?;
-    let result = sqlx::query("UPDATE tracked_anime SET episodes_seen = ? WHERE anilist_id = ?")
+    let result =
+        sqlx::query("UPDATE tracked_anime SET episodes_seen = ?, updated_at = datetime('now') WHERE anilist_id = ?")
         .bind(episodes_seen)
         .bind(anilist_id)
         .execute(&pool)
@@ -214,7 +232,7 @@ pub async fn delete_anime(app: AppHandle, anilist_id: i64) -> Result<(), String>
 #[tauri::command]
 pub async fn get_library(app: AppHandle) -> Result<Vec<TrackedAnime>, String> {
     let pool = db_pool(&app).await?;
-    let rows = sqlx::query("SELECT * FROM tracked_anime ORDER BY saved_at DESC, anilist_id DESC")
+    let rows = sqlx::query("SELECT * FROM tracked_anime ORDER BY updated_at DESC, anilist_id DESC")
         .fetch_all(&pool)
         .await
         .map_err(|e| logged_error("failed to load library", e))?;
@@ -229,7 +247,7 @@ pub async fn get_library_by_status(
 ) -> Result<Vec<TrackedAnime>, String> {
     let pool = db_pool(&app).await?;
     let rows = sqlx::query(
-        "SELECT * FROM tracked_anime WHERE status = ? ORDER BY saved_at DESC, anilist_id DESC",
+        "SELECT * FROM tracked_anime WHERE status = ? ORDER BY updated_at DESC, anilist_id DESC",
     )
     .bind(&status)
     .fetch_all(&pool)
@@ -248,7 +266,7 @@ mod tests {
         let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
 
         for migration in migrations() {
-            sqlx::query(migration.sql).execute(&pool).await.unwrap();
+            sqlx::raw_sql(migration.sql).execute(&pool).await.unwrap();
         }
 
         let columns: Vec<String> = sqlx::query("PRAGMA table_info(tracked_anime)")
@@ -271,13 +289,14 @@ mod tests {
                 "status",
                 "episodes_seen",
                 "saved_at",
+                "updated_at",
             ]
         );
 
         sqlx::query(
             "INSERT INTO tracked_anime
-                (anilist_id, title, cover_image_path, episode_count, season, year, format, status, episodes_seen)
-             VALUES (1, 'Cowboy Bebop', '/covers/1.jpg', 26, 'FALL', 1998, 'TV', 'watching', 5)",
+                (anilist_id, title, cover_image_path, episode_count, season, year, format, status, episodes_seen, updated_at)
+             VALUES (1, 'Cowboy Bebop', '/covers/1.jpg', 26, 'FALL', 1998, 'TV', 'watching', 5, datetime('now'))",
         )
         .execute(&pool)
         .await
@@ -297,5 +316,110 @@ mod tests {
         assert_eq!(anime.status, "watching");
         assert_eq!(anime.episodes_seen, 5);
         assert!(!anime.saved_at.is_empty());
+        assert!(!anime.updated_at.is_empty());
+    }
+
+    #[tokio::test]
+    async fn migration_v2_backfills_updated_at_from_saved_at() {
+        let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
+
+        let migrations = migrations();
+        sqlx::raw_sql(migrations[0].sql)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO tracked_anime (anilist_id, title, cover_image_path, status, saved_at)
+             VALUES (1, 'Older', '/covers/1.jpg', 'watching', '2024-01-01 00:00:00'),
+                    (2, 'Newer', '/covers/2.jpg', 'watching', '2024-06-01 00:00:00')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::raw_sql(migrations[1].sql)
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let columns: Vec<String> = sqlx::query("PRAGMA table_info(tracked_anime)")
+            .fetch_all(&pool)
+            .await
+            .unwrap()
+            .iter()
+            .map(|row| row.get::<String, _>("name"))
+            .collect();
+        assert!(columns.contains(&"updated_at".to_string()));
+
+        // The backfill copies saved_at, so the pre-upgrade Library order is
+        // preserved exactly.
+        let rows =
+            sqlx::query("SELECT * FROM tracked_anime ORDER BY updated_at DESC, anilist_id DESC")
+                .fetch_all(&pool)
+                .await
+                .unwrap();
+        let order: Vec<i64> = rows
+            .iter()
+            .map(|row| row.get::<i64, _>("anilist_id"))
+            .collect();
+        assert_eq!(order, vec![2, 1]);
+        for row in &rows {
+            assert_eq!(
+                row.get::<String, _>("saved_at"),
+                row.get::<String, _>("updated_at")
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn mutations_bump_updated_at_and_reorder_the_library() {
+        let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
+
+        for migration in migrations() {
+            sqlx::raw_sql(migration.sql).execute(&pool).await.unwrap();
+        }
+
+        sqlx::query(
+            "INSERT INTO tracked_anime
+                (anilist_id, title, cover_image_path, status, episodes_seen, saved_at, updated_at)
+             VALUES (1, 'Older', '/covers/1.jpg', 'watching', 3, '2024-01-01 00:00:00', '2024-01-01 00:00:00'),
+                    (2, 'Newer', '/covers/2.jpg', 'watching', 1, '2024-06-01 00:00:00', '2024-06-01 00:00:00')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // An episodes-seen bump on the older row moves it to the top.
+        sqlx::query("UPDATE tracked_anime SET episodes_seen = ?, updated_at = datetime('now') WHERE anilist_id = ?")
+            .bind(4)
+            .bind(1)
+            .execute(&pool)
+            .await
+            .unwrap();
+        let order: Vec<i64> =
+            sqlx::query("SELECT * FROM tracked_anime ORDER BY updated_at DESC, anilist_id DESC")
+                .fetch_all(&pool)
+                .await
+                .unwrap()
+                .iter()
+                .map(|row| row.get::<i64, _>("anilist_id"))
+                .collect();
+        assert_eq!(order, vec![1, 2]);
+
+        // A status bump on the other row moves it back to the top.
+        sqlx::query("UPDATE tracked_anime SET status = ?, updated_at = datetime('now') WHERE anilist_id = ?")
+            .bind("completed")
+            .bind(2)
+            .execute(&pool)
+            .await
+            .unwrap();
+        let order: Vec<i64> =
+            sqlx::query("SELECT * FROM tracked_anime ORDER BY updated_at DESC, anilist_id DESC")
+                .fetch_all(&pool)
+                .await
+                .unwrap()
+                .iter()
+                .map(|row| row.get::<i64, _>("anilist_id"))
+                .collect();
+        assert_eq!(order, vec![2, 1]);
     }
 }

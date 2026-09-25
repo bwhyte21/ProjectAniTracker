@@ -41,6 +41,7 @@ export function useSaveAnime() {
         status: args.status,
         episodes_seen: args.episodesSeen,
         saved_at: "",
+        updated_at: "",
       };
       const seed = (old: TrackedAnime[] | undefined) =>
         old ? [...old.filter((anime) => anime.anilist_id !== args.anilistId), optimistic] : old;
