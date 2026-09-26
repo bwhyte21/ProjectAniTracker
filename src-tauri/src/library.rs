@@ -89,6 +89,69 @@ async fn db_pool(app: &AppHandle) -> Result<SqlitePool, String> {
     Ok(app.state::<DbState>().pool().clone())
 }
 
+// The five watch statuses mirrored from WATCH_STATUSES in
+// src/lib/library/types.ts. IPC is a trust boundary, so the Rust side
+// re-checks what the frontend's type system only promises.
+const WATCH_STATUSES: [&str; 5] = [
+    "currently-watching",
+    "plan-to-watch",
+    "completed",
+    "paused",
+    "dropped",
+];
+
+// Validation failures are logged without echoing the rejected input, so
+// a compromised webview cannot plant arbitrary data in the log file.
+fn validate_status(status: &str) -> Result<(), String> {
+    if WATCH_STATUSES.contains(&status) {
+        Ok(())
+    } else {
+        Err(logged_error(
+            "invalid watch status",
+            "expected one of the five tracked statuses",
+        ))
+    }
+}
+
+fn validate_anilist_id(anilist_id: i64) -> Result<(), String> {
+    if anilist_id > 0 {
+        Ok(())
+    } else {
+        Err(logged_error(
+            "invalid anilist_id",
+            "expected a positive AniList media id",
+        ))
+    }
+}
+
+fn validate_episodes_seen(episodes_seen: i64) -> Result<(), String> {
+    if episodes_seen >= 0 {
+        Ok(())
+    } else {
+        Err(logged_error(
+            "invalid episodes_seen",
+            "expected a non-negative episode count",
+        ))
+    }
+}
+
+// Cover images are fetched from a frontend-supplied URL, so it must be
+// an https URL on an AniList CDN host before anything fetches it.
+fn validate_cover_url(url: &str) -> Result<(), String> {
+    let parsed = url::Url::parse(url).map_err(|e| logged_error("invalid cover image URL", e))?;
+    let is_anilist_host = parsed
+        .host_str()
+        .is_some_and(|host| host == "anilist.co" || host.ends_with(".anilist.co"));
+    if parsed.scheme() == "https" && is_anilist_host {
+        Ok(())
+    } else {
+        Err(logged_error(
+            "invalid cover image URL",
+            "must be an https AniList CDN URL",
+        ))
+    }
+}
+
 async fn download_cover(app: &AppHandle, anilist_id: i64, url: &str) -> Result<String, String> {
     let covers_dir = app
         .path()
@@ -133,6 +196,11 @@ pub async fn save_anime(
     status: String,
     episodes_seen: Option<i64>,
 ) -> Result<String, String> {
+    validate_anilist_id(anilist_id)?;
+    validate_status(&status)?;
+    validate_episodes_seen(episodes_seen.unwrap_or(0))?;
+    validate_cover_url(&cover_image_url)?;
+
     let cover_image_path = download_cover(&app, anilist_id, &cover_image_url).await?;
 
     let pool = db_pool(&app).await?;
@@ -163,6 +231,8 @@ pub async fn update_watch_status(
     anilist_id: i64,
     status: String,
 ) -> Result<(), String> {
+    validate_anilist_id(anilist_id)?;
+    validate_status(&status)?;
     let pool = db_pool(&app).await?;
     let result = sqlx::query(
         "UPDATE tracked_anime SET status = ?, updated_at = datetime('now') WHERE anilist_id = ?",
@@ -185,6 +255,8 @@ pub async fn update_episodes_seen(
     anilist_id: i64,
     episodes_seen: i64,
 ) -> Result<(), String> {
+    validate_anilist_id(anilist_id)?;
+    validate_episodes_seen(episodes_seen)?;
     let pool = db_pool(&app).await?;
     let result =
         sqlx::query("UPDATE tracked_anime SET episodes_seen = ?, updated_at = datetime('now') WHERE anilist_id = ?")
@@ -202,6 +274,7 @@ pub async fn update_episodes_seen(
 
 #[tauri::command]
 pub async fn delete_anime(app: AppHandle, anilist_id: i64) -> Result<(), String> {
+    validate_anilist_id(anilist_id)?;
     let pool = db_pool(&app).await?;
 
     let cover_image_path: Option<String> =
@@ -243,6 +316,7 @@ pub async fn get_library_by_status(
     app: AppHandle,
     status: String,
 ) -> Result<Vec<TrackedAnime>, String> {
+    validate_status(&status)?;
     let pool = db_pool(&app).await?;
     let rows = sqlx::query(
         "SELECT * FROM tracked_anime WHERE status = ? ORDER BY updated_at DESC, anilist_id DESC",
@@ -258,6 +332,46 @@ pub async fn get_library_by_status(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn validate_cover_url_accepts_only_https_anilist_hosts() {
+        assert!(validate_cover_url(
+            "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1-abc.jpg"
+        )
+        .is_ok());
+        assert!(validate_cover_url("https://anilist.co/cover.jpg").is_ok());
+        // Plain http, a non-AniList host, and a URL whose host merely
+        // mentions anilist.co are all rejected.
+        assert!(validate_cover_url("http://s4.anilist.co/file/cover.jpg").is_err());
+        assert!(validate_cover_url("https://evil.example/cover.jpg").is_err());
+        assert!(validate_cover_url("https://evil.example/anilist.co/cover.jpg").is_err());
+        assert!(validate_cover_url("https://anilist.co.evil.example/cover.jpg").is_err());
+        assert!(validate_cover_url("not a url").is_err());
+        assert!(validate_cover_url("file:///etc/passwd").is_err());
+    }
+
+    #[test]
+    fn validate_status_accepts_only_the_tracked_statuses() {
+        for status in WATCH_STATUSES {
+            assert!(validate_status(status).is_ok());
+        }
+        assert!(validate_status("watching").is_err());
+        assert!(validate_status("").is_err());
+    }
+
+    #[test]
+    fn validate_anilist_id_requires_a_positive_id() {
+        assert!(validate_anilist_id(1).is_ok());
+        assert!(validate_anilist_id(0).is_err());
+        assert!(validate_anilist_id(-1).is_err());
+    }
+
+    #[test]
+    fn validate_episodes_seen_rejects_negative_counts() {
+        assert!(validate_episodes_seen(0).is_ok());
+        assert!(validate_episodes_seen(12).is_ok());
+        assert!(validate_episodes_seen(-1).is_err());
+    }
 
     #[tokio::test]
     async fn migration_creates_tracked_anime_table() {

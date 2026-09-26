@@ -232,7 +232,18 @@ pub async fn set_db_location(app: AppHandle, dir: Option<String>) -> Result<(), 
         .app_config_dir()
         .map_err(|e| logged_error("failed to resolve the app-config directory", e))?;
     let target_dir = match dir {
-        Some(dir) => PathBuf::from(dir),
+        Some(dir) => {
+            // The folder picker returns absolute paths; anything else
+            // would silently resolve against the working directory.
+            let path = PathBuf::from(&dir);
+            if dir.is_empty() || !path.is_absolute() {
+                return Err(logged_error(
+                    "invalid database location",
+                    "expected an absolute directory path",
+                ));
+            }
+            path
+        }
         None => config_dir.clone(),
     };
 
