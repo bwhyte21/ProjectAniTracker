@@ -22,6 +22,7 @@ interface IpcPayload {
   format?: string | null;
   status?: string;
   episodesSeen?: number;
+  dir?: string | null;
 }
 
 // The row shape Rust returns: snake_case on both sides (AGENTS.md).
@@ -39,6 +40,13 @@ interface MockLibraryRow {
   updated_at: string;
 }
 
+// The DbLocation shape Rust returns: snake_case on both sides (AGENTS.md).
+interface MockDbLocation {
+  path: string;
+  is_default: boolean;
+  fell_back: boolean;
+}
+
 // Runs inside the browser via addInitScript, so it must stay self-contained:
 // no imports, no closures over Node-side values. State lives on window, which
 // persists across client-side SPA navigations within one page.
@@ -46,6 +54,9 @@ function ipcHandler(cmd: string, payload: IpcPayload | undefined): unknown {
   const w = window as typeof window & {
     __E2E_LIBRARY?: MockLibraryRow[];
     __E2E_FAIL_SAVE?: boolean;
+    __E2E_DB_LOCATION?: MockDbLocation;
+    __E2E_DB_PICK?: string | null;
+    __E2E_DB_SET_CALLS?: (string | null)[];
   };
   const db = (w.__E2E_LIBRARY ??= []);
   switch (cmd) {
@@ -104,6 +115,24 @@ function ipcHandler(cmd: string, payload: IpcPayload | undefined): unknown {
     }
     case "get_build_info":
       return { version: "0.1.0", git_commit: "e2e-mock", platform: "linux" };
+    case "get_db_location":
+      // Inlined, not a module constant: the handler is serialized into
+      // the browser init script, where module scope does not exist.
+      return (
+        w.__E2E_DB_LOCATION ?? {
+          path: "/home/user/.config/com.bryan.anitracker",
+          is_default: true,
+          fell_back: false,
+        }
+      );
+    case "set_db_location":
+      (w.__E2E_DB_SET_CALLS ??= []).push(payload?.dir ?? null);
+      return null;
+    // The settings folder picker (tauri-plugin-dialog) also rides the
+    // IPC channel; tests set __E2E_DB_PICK to simulate a chosen
+    // directory and leave it unset to simulate cancelling the picker.
+    case "plugin:dialog|open":
+      return w.__E2E_DB_PICK ?? null;
     // The app logs surfaced errors through tauri-plugin-log's JS bindings
     // (Phase 20); accept the command so the browser build's log calls
     // resolve instead of rejecting into their silent catch.

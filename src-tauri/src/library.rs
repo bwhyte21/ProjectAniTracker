@@ -2,27 +2,28 @@ use serde::Serialize;
 use sqlx::sqlite::SqlitePool;
 use sqlx::Row;
 use tauri::{AppHandle, Manager};
-use tauri_plugin_sql::{DbInstances, DbPool, Migration, MigrationKind};
 
-/// Connection string understood by tauri-plugin-sql. The plugin resolves
-/// `sqlite:` databases relative to the OS app-config directory.
-pub const DB_URL: &str = "sqlite:anitracker.db";
+use crate::db::DbState;
 
 /// Formats an IPC error message and logs it (ADR-0010): every `map_err`
 /// failure site funnels through here so the log file and the error string
 /// returned to the frontend stay in sync.
-fn logged_error(context: &str, e: impl std::fmt::Display) -> String {
+pub(crate) fn logged_error(context: &str, e: impl std::fmt::Display) -> String {
     let message = format!("{context}: {e}");
     log::error!("{message}");
     message
 }
 
-pub fn migrations() -> Vec<Migration> {
+/// Schema migrations carried over verbatim from the tauri-plugin-sql
+/// list (ADR-0012); the app-owned pool runs them through sqlx's
+/// `Migrator` at every boot.
+pub fn migrations() -> Vec<sqlx::migrate::Migration> {
     vec![
-        Migration {
-            version: 1,
-            description: "create tracked_anime table",
-            sql: "CREATE TABLE tracked_anime (
+        sqlx::migrate::Migration::new(
+            1,
+            "create tracked_anime table".into(),
+            sqlx::migrate::MigrationType::Simple,
+            "CREATE TABLE tracked_anime (
             anilist_id INTEGER PRIMARY KEY,
             title TEXT NOT NULL,
             cover_image_path TEXT NOT NULL,
@@ -33,20 +34,23 @@ pub fn migrations() -> Vec<Migration> {
             status TEXT NOT NULL,
             episodes_seen INTEGER NOT NULL DEFAULT 0,
             saved_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )",
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 2,
-            description: "add updated_at column",
+        )"
+            .into(),
+            false,
+        ),
+        sqlx::migrate::Migration::new(
+            2,
+            "add updated_at column".into(),
+            sqlx::migrate::MigrationType::Simple,
             // SQLite forbids expression defaults in ALTER TABLE ADD COLUMN, so
             // the column ships nullable and the backfill fills it: after the
             // migration every row is non-null, in the pre-upgrade saved_at
             // order (ADR-0011).
-            sql: "ALTER TABLE tracked_anime ADD COLUMN updated_at TEXT;
-            UPDATE tracked_anime SET updated_at = saved_at WHERE updated_at IS NULL;",
-            kind: MigrationKind::Up,
-        },
+            "ALTER TABLE tracked_anime ADD COLUMN updated_at TEXT;
+            UPDATE tracked_anime SET updated_at = saved_at WHERE updated_at IS NULL;"
+                .into(),
+            false,
+        ),
     ]
 }
 
@@ -82,13 +86,7 @@ fn row_to_tracked_anime(row: &sqlx::sqlite::SqliteRow) -> TrackedAnime {
 }
 
 async fn db_pool(app: &AppHandle) -> Result<SqlitePool, String> {
-    let instances = app.state::<DbInstances>();
-    let instances = instances.inner().0.read().await;
-    if let Some(DbPool::Sqlite(pool)) = instances.get(DB_URL) {
-        Ok(pool.clone())
-    } else {
-        Err(format!("database {DB_URL} is not loaded"))
-    }
+    Ok(app.state::<DbState>().pool().clone())
 }
 
 async fn download_cover(app: &AppHandle, anilist_id: i64, url: &str) -> Result<String, String> {
@@ -266,7 +264,7 @@ mod tests {
         let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
 
         for migration in migrations() {
-            sqlx::raw_sql(migration.sql).execute(&pool).await.unwrap();
+            sqlx::raw_sql(&migration.sql).execute(&pool).await.unwrap();
         }
 
         let columns: Vec<String> = sqlx::query("PRAGMA table_info(tracked_anime)")
@@ -324,7 +322,7 @@ mod tests {
         let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
 
         let migrations = migrations();
-        sqlx::raw_sql(migrations[0].sql)
+        sqlx::raw_sql(&migrations[0].sql)
             .execute(&pool)
             .await
             .unwrap();
@@ -336,7 +334,7 @@ mod tests {
         .execute(&pool)
         .await
         .unwrap();
-        sqlx::raw_sql(migrations[1].sql)
+        sqlx::raw_sql(&migrations[1].sql)
             .execute(&pool)
             .await
             .unwrap();
@@ -375,7 +373,7 @@ mod tests {
         let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
 
         for migration in migrations() {
-            sqlx::raw_sql(migration.sql).execute(&pool).await.unwrap();
+            sqlx::raw_sql(&migration.sql).execute(&pool).await.unwrap();
         }
 
         sqlx::query(

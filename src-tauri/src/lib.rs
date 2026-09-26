@@ -1,7 +1,9 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+mod db;
 mod library;
 
 use serde::Serialize;
+use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
 
 #[derive(Serialize)]
@@ -42,12 +44,17 @@ fn log_plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(log_plugin())
-        .plugin(
-            tauri_plugin_sql::Builder::default()
-                .add_migrations(library::DB_URL, library::migrations())
-                .build(),
-        )
+        .setup(|app| {
+            // The app-owned pool (ADR-0012) connects before any command
+            // can run; a chosen directory that fails to open falls back
+            // to the default for the session.
+            let config_dir = app.path().app_config_dir()?;
+            let state = tauri::async_runtime::block_on(db::init_db(&config_dir));
+            app.manage(state);
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             get_build_info,
@@ -56,7 +63,9 @@ pub fn run() {
             library::update_episodes_seen,
             library::delete_anime,
             library::get_library,
-            library::get_library_by_status
+            library::get_library_by_status,
+            db::get_db_location,
+            db::set_db_location
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
