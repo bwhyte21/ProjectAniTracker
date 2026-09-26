@@ -21,6 +21,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/router-plugin": "^1.168.40",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-log": "^2.9.2",
     "@tauri-apps/plugin-opener": "^2",
     "class-variance-authority": "^0.7.1",
