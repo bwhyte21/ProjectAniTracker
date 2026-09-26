@@ -1,6 +1,6 @@
 [package]
 name = "anitracker"
-version = "0.1.0"
+version = "0.2.0"
 description = "AniTracker - local-first anime tracker"
 authors = ["Bryan"]
 edition = "2021"

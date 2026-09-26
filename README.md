@@ -4,7 +4,7 @@ A personal, local-first anime tracker desktop app. Browse anime via AniList,
 track what you are watching, and keep your library on your own machine. There
 are no profiles, accounts, or social features -- the app is only a private tracker.
 
-https://github.com/user-attachments/assets/6f67f0ba-249b-4d76-aaeb-c97507c68289
+<https://github.com/user-attachments/assets/6f67f0ba-249b-4d76-aaeb-c97507c68289>
 
 ## Features
 
